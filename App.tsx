@@ -1,5 +1,6 @@
 import "./global.css";
 import React, { useEffect, useState } from "react";
+import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import {
   ActivityIndicator,
   AppState,
@@ -32,14 +33,7 @@ import {
 import { MoviePicker } from "./src/MoviePicker";
 import { useCollections } from "./src/useCollections";
 import { Credits } from "./src/Credits";
-import { collections } from "./src/collections";
-import {
-  Availability,
-  MovieDetails,
-  getMovieDetails,
-  getAvailability,
-  watchSearch,
-} from "./src/providers";
+import { getMovieDetails, getAvailability, watchSearch } from "./src/providers";
 
 type Tab = "Calendar" | "Collections" | "My list";
 const serif = Platform.select({
@@ -48,11 +42,11 @@ const serif = Platform.select({
   default: "Georgia",
 });
 const defaultSeason: Season = new Date().getMonth() >= 10 ? "christmas" : "halloween";
-const fresh = (season: Season): Calendar => ({
+const emptyCalendar = (season: Season): Calendar => ({
   season,
   year: new Date().getFullYear(),
-  name: collections.find((c) => c.season === season)!.name,
-  movies: collections.find((c) => c.season === season)!.movies,
+  name: "",
+  movies: [],
   revealed: [],
   watched: [],
 });
@@ -87,18 +81,30 @@ function Heading({ children }: { children: React.ReactNode }) {
   );
 }
 export default function App() {
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            refetchOnWindowFocus: false,
+          },
+        },
+      }),
+  );
   return (
-    <SafeAreaProvider>
-      <MovieApp />
-    </SafeAreaProvider>
+    <QueryClientProvider client={queryClient}>
+      <SafeAreaProvider>
+        <MovieApp />
+      </SafeAreaProvider>
+    </QueryClientProvider>
   );
 }
 function MovieApp() {
   const { width } = useWindowDimensions();
   const wide = width >= 850;
   const [calendars, setCalendars] = useState<Record<Season, Calendar>>({
-    halloween: fresh("halloween"),
-    christmas: fresh("christmas"),
+    halloween: emptyCalendar("halloween"),
+    christmas: emptyCalendar("christmas"),
   });
   const [season, setSeason] = useState<Season>(defaultSeason);
   const [tab, setTab] = useState<Tab>("Calendar");
@@ -112,17 +118,32 @@ function MovieApp() {
   const [pending, setPending] = useState<Calendar | null>(null);
   const [proposedMovies, setProposedMovies] = useState<Movie[]>([]);
   const [listName, setListName] = useState("My movie tradition");
-  const [availability, setAvailability] = useState<Availability | null>(null);
-  const [details, setDetails] = useState<MovieDetails | null>(null);
-  const [detailsBusy, setDetailsBusy] = useState(false);
-  const [posterFailed, setPosterFailed] = useState(false);
+  const [posterFailedFor, setPosterFailedFor] = useState<string | null>(null);
   const [providerError, setProviderError] = useState("");
-  const [busy, setBusy] = useState(false);
   const catalog = useCollections(season);
   const calendar = calendars[season];
   const info = seasonInfo[season];
   const unlocked = preview ? calendar.movies.length : unlockedDays(calendar, now);
   const movie = selected ? calendar.movies[selected - 1] : undefined;
+  const movieKey = movie ? String(movie.tmdbId ?? `${movie.title}:${movie.year}`) : null;
+  const detailsQuery = useQuery({
+    queryKey: ["movie-details", movieKey],
+    queryFn: ({ signal }) => getMovieDetails(movie!, signal),
+    enabled: !!movie,
+    retry: 1,
+  });
+  const availabilityQuery = useQuery({
+    queryKey: ["availability", movieKey, region],
+    queryFn: ({ signal }) => getAvailability(movie!, region, signal),
+    enabled: !!movie,
+    retry: 1,
+  });
+  const details = detailsQuery.data;
+  const availability = availabilityQuery.data;
+  const detailsBusy = detailsQuery.isPending || detailsQuery.isFetching;
+  const busy = availabilityQuery.isPending || availabilityQuery.isFetching;
+  const providerQueryError =
+    availabilityQuery.error instanceof Error ? availabilityQuery.error.message : "";
   const revealed = preview ? [] : calendar.revealed;
   const watched = preview ? [] : calendar.watched;
   const nextDay = Array.from({ length: unlocked }, (_, i) => i + 1).find(
@@ -140,7 +161,7 @@ function MovieApp() {
         if (["US", "GB", "CA", "AU"].includes(value.region)) setRegion(value.region);
       })
       .catch(() =>
-        setError("Your saved calendar could not be loaded. Default collections are available."),
+        setError("Your saved calendar could not be loaded. Please create a new calendar."),
       )
       .finally(() => setLoaded(true));
     const timer = setInterval(() => setNow(new Date()), 30000);
@@ -157,39 +178,8 @@ function MovieApp() {
       );
   }, [calendars, season, region, loaded]);
   useEffect(() => {
-    setAvailability(null);
-    setProviderError("");
-    if (!movie) return;
-    const controller = new AbortController();
-    setBusy(true);
-    getAvailability(movie, region, controller.signal)
-      .then(setAvailability)
-      .catch((e) => {
-        if (!controller.signal.aborted) setProviderError(e.message);
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setBusy(false);
-      });
-    return () => controller.abort();
-  }, [movie, region]);
-  useEffect(() => {
-    setDetails(null);
-    setPosterFailed(false);
-    if (!movie) return;
-    const controller = new AbortController();
-    setDetailsBusy(true);
-    getMovieDetails(movie, controller.signal)
-      .then((value) => {
-        if (!controller.signal.aborted) setDetails(value);
-      })
-      .catch(() => {
-        /* The reveal keeps its title and watch links when metadata is unavailable. */
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setDetailsBusy(false);
-      });
-    return () => controller.abort();
-  }, [movie]);
+    setProviderError(providerQueryError);
+  }, [providerQueryError]);
   const update = (c: Calendar) => setCalendars((previous) => ({ ...previous, [c.season]: c }));
   const openDay = (day: number) => {
     if (day > unlocked) return;
@@ -623,13 +613,13 @@ function MovieApp() {
                   <View style={{ height: 240, justifyContent: "center" }}>
                     <ActivityIndicator accessibilityLabel="Loading movie details" color="#496347" />
                   </View>
-                ) : details?.posterUrl && !posterFailed ? (
+                ) : details?.posterUrl && posterFailedFor !== movieKey ? (
                   <Image
                     source={{ uri: details.posterUrl }}
                     accessibilityLabel={`${movie?.title} movie poster`}
                     resizeMode="contain"
                     style={{ width: 180, height: 270, borderRadius: 12 }}
-                    onError={() => setPosterFailed(true)}
+                    onError={() => setPosterFailedFor(movieKey)}
                   />
                 ) : (
                   <View className="items-center">

@@ -1,4 +1,6 @@
 import { Movie } from "./calendar";
+import type { Collection, Season } from "../shared/models";
+import { isCollection } from "../shared/validation";
 export type Availability = {
   link: string;
   groups: { label: string; names: string[] }[];
@@ -7,6 +9,23 @@ export type MovieDetails = {
   posterUrl: string | null;
   overview: string | null;
 };
+export async function getCollections(season: Season, signal: AbortSignal): Promise<Collection[]> {
+  const base = process.env.EXPO_PUBLIC_MOVIE_API_URL;
+  if (!base) throw new Error("Collections are not configured yet.");
+  const url = new URL("/api/collections", base);
+  url.searchParams.set("season", season);
+  const response = await fetch(url.toString(), { signal });
+  if (!response.ok) throw new Error("Collections are temporarily unavailable.");
+  const data = (await response.json()) as { collections?: unknown };
+  if (
+    !Array.isArray(data.collections) ||
+    !data.collections.every(
+      (collection) => isCollection(collection) && collection.season === season,
+    )
+  )
+    throw new Error("Collections returned an invalid response.");
+  return data.collections;
+}
 export async function getMovieDetails(
   movie: Movie,
   signal: AbortSignal,

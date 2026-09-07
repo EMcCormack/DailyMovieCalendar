@@ -3,20 +3,55 @@
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
+    "@expo/vector-icons": "^15.1.1",
+    "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "~57.0.20",
+    "expo-linear-gradient": "~57.0.1",
     "expo-status-bar": "~57.0.1",
+    "nativewind": "^4.2.6",
     "react": "19.2.3",
-    "react-native": "0.86.3"
+    "react-dom": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-css-interop": "^0.2.6",
+    "react-native-reanimated": "4.5.1",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-svg": "15.15.4",
+    "react-native-web": "^0.21.2",
+    "react-native-worklets": "0.10.1"
   },
   "devDependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1127.0",
+    "@aws-sdk/client-ssm": "^3.1127.0",
+    "@aws-sdk/lib-dynamodb": "^3.1127.0",
+    "@types/aws-lambda": "^8.10.163",
+    "@types/node": "^26.4.1",
     "@types/react": "~19.2.2",
-    "typescript": "~6.0.3"
+    "babel-preset-expo": "^57.0.10",
+    "esbuild": "^0.28.2",
+    "prettier": "^3.9.6",
+    "tailwindcss": "^3.4.19",
+    "tsx": "^4.23.13",
+    "typescript": "~7.0.2",
+    "yaml": "^2.9.0"
   },
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit && tsc -p server/tsconfig.json",
+    "test": "node --import tsx --test src/*.test.ts server/*.test.ts",
+    "server": "node --env-file-if-exists=.env --import tsx server/index.ts",
+    "backend:build": "esbuild server/handler.ts --bundle --platform=node --target=node24 --format=cjs --outfile=build/server/handler.js",
+    "backend:seed": "node --env-file-if-exists=.env --import tsx server/seed.ts"
   },
-  "private": true
+  "private": true,
+  "packageManager": "pnpm@11.5.0",
+  "expo": {
+    "install": {
+      "exclude": [
+        "typescript"
+      ]
+    }
+  }
 }

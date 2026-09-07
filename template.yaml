@@ -1,0 +1,121 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Reel Ritual noncommercial movie API. Lambda has no customer VPC or NAT gateway.
+Parameters:
+  AllowedOrigin:
+    Type: String
+    Default: http://localhost:8081
+    Description: Exact allowed web origin. Native apps are not restricted by browser CORS.
+  TmdbTokenParameterName:
+    Type: String
+    Default: /reel-ritual/tmdb-token
+    AllowedPattern: "^/[a-zA-Z0-9_./-]+$"
+    Description: Existing standard SSM SecureString parameter using the default aws/ssm encryption key. Pass its name, not the token.
+Resources:
+  CollectionsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      SSESpecification:
+        SSEEnabled: true
+  MovieApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: "$default"
+      CorsConfiguration:
+        AllowOrigins: [!Ref AllowedOrigin]
+        AllowMethods: [GET, OPTIONS]
+        AllowHeaders: [Content-Type]
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 10
+        ThrottlingRateLimit: 5
+  MovieFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: build/server/
+      Handler: handler.handler
+      Runtime: nodejs24.x
+      Architectures: [arm64]
+      MemorySize: 256
+      Timeout: 25
+      ReservedConcurrentExecutions: 5
+      Environment:
+        Variables:
+          COLLECTIONS_TABLE: !Ref CollectionsTable
+          TMDB_TOKEN_PARAMETER: !Ref TmdbTokenParameterName
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:Query
+              Resource: !GetAtt CollectionsTable.Arn
+            - Effect: Allow
+              Action: ssm:GetParameter
+              Resource: !Sub "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${TmdbTokenParameterName}"
+      Events:
+        Health:
+          Type: HttpApi
+          Properties:
+            {
+              ApiId: !Ref MovieApi,
+              Path: /health,
+              Method: GET,
+              PayloadFormatVersion: "2.0",
+            }
+        Collections:
+          Type: HttpApi
+          Properties:
+            {
+              ApiId: !Ref MovieApi,
+              Path: /api/collections,
+              Method: GET,
+              PayloadFormatVersion: "2.0",
+            }
+        Search:
+          Type: HttpApi
+          Properties:
+            {
+              ApiId: !Ref MovieApi,
+              Path: /api/movies/search,
+              Method: GET,
+              PayloadFormatVersion: "2.0",
+            }
+        Details:
+          Type: HttpApi
+          Properties:
+            {
+              ApiId: !Ref MovieApi,
+              Path: /api/movie,
+              Method: GET,
+              PayloadFormatVersion: "2.0",
+            }
+        Providers:
+          Type: HttpApi
+          Properties:
+            {
+              ApiId: !Ref MovieApi,
+              Path: /api/providers,
+              Method: GET,
+              PayloadFormatVersion: "2.0",
+            }
+  FunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${MovieFunction}"
+      RetentionInDays: 7
+Outputs:
+  ApiUrl:
+    Value: !Sub "https://${MovieApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}"
+  CollectionsTableName:
+    Value: !Ref CollectionsTable

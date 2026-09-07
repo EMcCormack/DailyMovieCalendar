@@ -18,8 +18,7 @@ export async function getMovieDetails(
   url.searchParams.set("title", movie.title);
   url.searchParams.set("year", String(movie.year));
   const response = await fetch(url.toString(), { signal });
-  if (!response.ok)
-    throw new Error("Movie details are temporarily unavailable.");
+  if (!response.ok) throw new Error("Movie details are temporarily unavailable.");
   return response.json();
 }
 export async function getAvailability(
@@ -36,9 +35,7 @@ export async function getAvailability(
   url.searchParams.set("region", region);
   const response = await fetch(url.toString(), { signal });
   if (!response.ok)
-    throw new Error(
-      "Availability is temporarily unavailable. Try the search links below.",
-    );
+    throw new Error("Availability is temporarily unavailable. Try the search links below.");
   return response.json();
 }
 export const watchSearch = (movie: Movie, region: string) =>

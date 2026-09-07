@@ -26,26 +26,19 @@ async function main() {
         release_date?: string;
       }[];
     };
-    const normalize = (value: string) =>
-      value.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+    const normalize = (value: string) => value.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
     return result.results
       .filter(
         (m) =>
           Number(m.release_date?.slice(0, 4)) === movie.year &&
-          [m.title, m.original_title || ""].some(
-            (t) => normalize(t) === normalize(movie.title),
-          ),
+          [m.title, m.original_title || ""].some((t) => normalize(t) === normalize(movie.title)),
       )
       .map((m) => m.id);
   });
   for (const collection of resolved)
-    console.log(
-      `${collection.id}: ${collection.movies.length} resolved movies`,
-    );
+    console.log(`${collection.id}: ${collection.movies.length} resolved movies`);
   if (!publish) {
-    console.log(
-      "Dry run complete. No database writes. Use --publish to insert collections.",
-    );
+    console.log("Dry run complete. No database writes. Use --publish to insert collections.");
     return;
   }
   const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
@@ -66,18 +59,13 @@ async function main() {
       );
       console.log(`Published ${collection.id}`);
     } catch (error) {
-      if (
-        error instanceof Error &&
-        error.name === "ConditionalCheckFailedException"
-      )
+      if (error instanceof Error && error.name === "ConditionalCheckFailedException")
         console.log(`Kept existing collection ${collection.id}`);
       else throw error;
     }
   }
 }
 main().catch((error) => {
-  console.error(
-    error instanceof Error ? error.message : "Collection seed failed",
-  );
+  console.error(error instanceof Error ? error.message : "Collection seed failed");
   process.exitCode = 1;
 });

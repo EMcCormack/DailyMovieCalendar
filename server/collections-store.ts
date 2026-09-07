@@ -38,7 +38,5 @@ export function createCollectionsReader(
 }
 export function dynamoCollectionsReader(tableName: string): CollectionsReader {
   const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
-  return createCollectionsReader(tableName, (input) =>
-    client.send(new QueryCommand(input)),
-  );
+  return createCollectionsReader(tableName, (input) => client.send(new QueryCommand(input)));
 }

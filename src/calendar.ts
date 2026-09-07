@@ -66,13 +66,11 @@ export function isCalendar(value: unknown): value is Calendar {
         typeof m.title === "string" &&
         typeof m.genre === "string" &&
         typeof m.year === "number" &&
-        (m.tmdbId === undefined ||
-          (Number.isInteger(m.tmdbId) && m.tmdbId > 0)),
+        (m.tmdbId === undefined || (Number.isInteger(m.tmdbId) && m.tmdbId > 0)),
     ) &&
     [c.revealed, c.watched].every(
       (a) =>
-        Array.isArray(a) &&
-        a.every((d) => Number.isInteger(d) && d > 0 && d <= c.movies.length),
+        Array.isArray(a) && a.every((d) => Number.isInteger(d) && d > 0 && d <= c.movies.length),
     )
   );
 }

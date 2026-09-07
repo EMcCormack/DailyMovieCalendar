@@ -35,7 +35,6 @@ export function isCollection(value: unknown): value is Collection {
     value.movies.length > 0 &&
     value.movies.length <= (value.season === "halloween" ? 31 : 25) &&
     value.movies.every(isMovie) &&
-    new Set(value.movies.map((movie) => movie.tmdbId ?? movie.id)).size ===
-      value.movies.length
+    new Set(value.movies.map((movie) => movie.tmdbId ?? movie.id)).size === value.movies.length
   );
 }

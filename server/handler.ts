@@ -1,7 +1,4 @@
-import type {
-  APIGatewayProxyEventV2,
-  APIGatewayProxyStructuredResultV2,
-} from "aws-lambda";
+import type { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2 } from "aws-lambda";
 import { createApi } from "./api";
 import { dynamoCollectionsReader } from "./collections-store";
 import { createTokenProvider } from "./secrets";
@@ -15,9 +12,7 @@ export function createHandler({
 }) {
   const publicApi = createApi({ readCollections });
   let movieApi: Api | undefined, previousToken: string | undefined;
-  return async (
-    event: APIGatewayProxyEventV2,
-  ): Promise<APIGatewayProxyStructuredResultV2> => {
+  return async (event: APIGatewayProxyEventV2): Promise<APIGatewayProxyStructuredResultV2> => {
     const headers = {
       "Content-Type": "application/json",
       "Cache-Control": "no-store",
@@ -32,11 +27,7 @@ export function createHandler({
     url.search = event.rawQueryString;
     try {
       let api = publicApi;
-      if (
-        ["/api/movie", "/api/providers", "/api/movies/search"].includes(
-          url.pathname,
-        )
-      ) {
+      if (["/api/movie", "/api/providers", "/api/movies/search"].includes(url.pathname)) {
         const token = await getToken();
         if (!movieApi || token !== previousToken) {
           movieApi = createApi({ token });

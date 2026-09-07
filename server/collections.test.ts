@@ -43,16 +43,9 @@ test("collections do not depend on TMDB and distinguish empty results from failu
       throw new Error("Database unavailable");
     },
   });
-  assert.equal(
-    (await unavailable(url("/api/collections?season=christmas"))).status,
-    503,
-  );
+  assert.equal((await unavailable(url("/api/collections?season=christmas"))).status, 503);
 });
-function event(
-  path: string,
-  query = "",
-  method = "GET",
-): APIGatewayProxyEventV2 {
+function event(path: string, query = "", method = "GET"): APIGatewayProxyEventV2 {
   return {
     version: "2.0",
     routeKey: "GET /api/collections",
@@ -93,10 +86,7 @@ test("Lambda adapter parses HTTP API events without secrets for public collectio
   assert.equal(result.statusCode, 200);
   assert.equal(JSON.parse(result.body!).collections[0].id, collection.id);
   assert.equal(secrets, 0);
-  assert.equal(
-    (await handler(event("/api/collections", "", "POST"))).statusCode,
-    405,
-  );
+  assert.equal((await handler(event("/api/collections", "", "POST"))).statusCode, 405);
   const failure = await handler(event("/api/movie", "id=42"));
   assert.equal(failure.statusCode, 503);
   assert.ok(!failure.body?.includes("secret-value"));
@@ -104,10 +94,9 @@ test("Lambda adapter parses HTTP API events without secrets for public collectio
 test("seed resolves unique titles once, preserves order, and rejects ambiguous IDs", async () => {
   const small = { ...collection, movies: collection.movies.slice(0, 2) };
   let count = 0;
-  const result = await resolveCollections(
-    [small, { ...small, id: "second" }],
-    async () => [++count],
-  );
+  const result = await resolveCollections([small, { ...small, id: "second" }], async () => [
+    ++count,
+  ]);
   assert.equal(count, 2);
   assert.equal(result[0].movies[0].title, small.movies[0].title);
   assert.deepEqual(

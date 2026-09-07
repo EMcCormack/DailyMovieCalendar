@@ -13,11 +13,7 @@ export async function resolveCollections(
       let id = movie.tmdbId ?? ids.get(key);
       if (!id) {
         const matches = await resolve(movie);
-        if (
-          matches.length !== 1 ||
-          !Number.isSafeInteger(matches[0]) ||
-          matches[0] <= 0
-        )
+        if (matches.length !== 1 || !Number.isSafeInteger(matches[0]) || matches[0] <= 0)
           throw new Error(
             `Review TMDB match for ${movie.title} (${movie.year}); expected one result, got ${matches.length}. No collections have been written.`,
           );
@@ -27,8 +23,7 @@ export async function resolveCollections(
       movies.push({ ...movie, id: `tmdb:${id}`, tmdbId: id });
     }
     const resolved = { ...collection, movies };
-    if (!isCollection(resolved))
-      throw new Error(`Invalid collection ${collection.id}`);
+    if (!isCollection(resolved)) throw new Error(`Invalid collection ${collection.id}`);
     result.push(resolved);
   }
   return result;

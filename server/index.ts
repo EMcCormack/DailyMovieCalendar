@@ -10,10 +10,7 @@ const api = createApi({
     : async (season) => collections.filter((c) => c.season === season),
 });
 createServer(async (request, response) => {
-  response.setHeader(
-    "Access-Control-Allow-Origin",
-    process.env.ALLOWED_ORIGIN || "*",
-  );
+  response.setHeader("Access-Control-Allow-Origin", process.env.ALLOWED_ORIGIN || "*");
   response.setHeader("Content-Type", "application/json");
   if (request.method === "OPTIONS") {
     response.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
@@ -33,7 +30,5 @@ createServer(async (request, response) => {
     response.end(JSON.stringify({ error: "Request failed" }));
   }
 }).listen(Number(process.env.PORT || 3001), "0.0.0.0", () =>
-  console.log(
-    `Movie API ready (${table ? "DynamoDB collections" : "local fixture collections"})`,
-  ),
+  console.log(`Movie API ready (${table ? "DynamoDB collections" : "local fixture collections"})`),
 );

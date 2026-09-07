@@ -21,8 +21,7 @@ export const collections: Collection[] = [
     id: "cozy",
     name: "A very cozy Christmas",
     season: "christmas",
-    description:
-      "Comfort classics, snowy evenings, and a little holiday magic.",
+    description: "Comfort classics, snowy evenings, and a little holiday magic.",
     badge: "THE CROWD PLEASER",
     emoji: "🏡",
     movies: christmas,
@@ -32,8 +31,7 @@ export const collections: Collection[] = [
     id: "spooky",
     name: "Spooky, not sleepless",
     season: "halloween",
-    description:
-      "Witches, friendly ghosts, and wonderfully strange adventures.",
+    description: "Witches, friendly ghosts, and wonderfully strange adventures.",
     badge: "A LITTLE SPOOKY",
     emoji: "🎃",
     movies: halloween,

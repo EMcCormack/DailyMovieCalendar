@@ -1,12 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {
-  Calendar,
-  isCalendar,
-  parseMovies,
-  shuffled,
-  unlockedDays,
-} from "./calendar";
+import { Calendar, isCalendar, parseMovies, shuffled, unlockedDays } from "./calendar";
 import { collections } from "./collections";
 const calendar: Calendar = {
   season: "halloween",
@@ -35,9 +29,7 @@ test("short Christmas lists stop at their movie count", () => {
 });
 test("custom titles preserve remakes and remove duplicate lines", () => {
   assert.deepEqual(
-    parseMovies(
-      " Elf (2003)\n\nelf (2003)\nThe Thing (1982)\nThe Thing (2011)",
-    ).map((m) => m.year),
+    parseMovies(" Elf (2003)\n\nelf (2003)\nThe Thing (1982)\nThe Thing (2011)").map((m) => m.year),
     [2003, 1982, 2011],
   );
 });

@@ -37,10 +37,7 @@ test("search returns stable IDs, metadata, pagination, and excludes adult result
   };
   assert.equal(data.movies.length, 1);
   assert.equal(data.movies[0].tmdbId, 42);
-  assert.equal(
-    data.movies[0].posterUrl,
-    "https://image.tmdb.org/t/p/w500/poster.jpg",
-  );
+  assert.equal(data.movies[0].posterUrl, "https://image.tmdb.org/t/p/w500/poster.jpg");
   assert.equal(calls[0].url.searchParams.get("page"), "2");
   assert.equal(
     new Headers(calls[0].options.headers).get("Authorization"),
@@ -70,8 +67,7 @@ test("provider lookup uses selected ID and country without title searching", asy
 test("metadata does not depend on watch providers", async () => {
   const { api, calls } = fixture({ "/3/movie/42": movie });
   assert.equal(
-    ((await api(url("/api/movie?id=42"))).data as { overview: string })
-      .overview,
+    ((await api(url("/api/movie?id=42"))).data as { overview: string }).overview,
     "A story.",
   );
   assert.equal(calls.length, 1);
@@ -85,14 +81,8 @@ test("legacy ambiguous titles are not silently assigned the wrong movie", async 
 test("invalid IDs/pages are rejected and upstream errors are handled", async () => {
   const { api, calls } = fixture({});
   assert.equal((await api(url("/api/movie?id=../42"))).status, 400);
-  assert.equal(
-    (await api(url("/api/movies/search?q=Movie&page=501"))).status,
-    400,
-  );
+  assert.equal((await api(url("/api/movies/search?q=Movie&page=501"))).status, 400);
   assert.equal(calls.length, 0);
   assert.equal((await api(url("/api/movie?id=42"))).status, 502);
-  assert.equal(
-    (await createApi({})(url("/api/movies/search?q=Movie"))).status,
-    503,
-  );
+  assert.equal((await createApi({})(url("/api/movies/search?q=Movie"))).status, 503);
 });

@@ -47,8 +47,7 @@ const serif = Platform.select({
   android: "serif",
   default: "Georgia",
 });
-const defaultSeason: Season =
-  new Date().getMonth() >= 10 ? "christmas" : "halloween";
+const defaultSeason: Season = new Date().getMonth() >= 10 ? "christmas" : "halloween";
 const fresh = (season: Season): Calendar => ({
   season,
   year: new Date().getFullYear(),
@@ -76,11 +75,7 @@ function Button({
       className={`rounded-xl px-5 py-3.5 items-center ${secondary ? "border border-line bg-white" : "bg-moss"}`}
       style={{ opacity: disabled ? 0.4 : 1 }}
     >
-      <Text
-        className={`font-semibold ${secondary ? "text-ink" : "text-white"}`}
-      >
-        {title}
-      </Text>
+      <Text className={`font-semibold ${secondary ? "text-ink" : "text-white"}`}>{title}</Text>
     </Pressable>
   );
 }
@@ -126,9 +121,7 @@ function MovieApp() {
   const catalog = useCollections(season);
   const calendar = calendars[season];
   const info = seasonInfo[season];
-  const unlocked = preview
-    ? calendar.movies.length
-    : unlockedDays(calendar, now);
+  const unlocked = preview ? calendar.movies.length : unlockedDays(calendar, now);
   const movie = selected ? calendar.movies[selected - 1] : undefined;
   const revealed = preview ? [] : calendar.revealed;
   const watched = preview ? [] : calendar.watched;
@@ -140,27 +133,18 @@ function MovieApp() {
       .then((raw) => {
         if (!raw) return;
         const value = JSON.parse(raw);
-        if (
-          !isCalendar(value.calendars?.halloween) ||
-          !isCalendar(value.calendars?.christmas)
-        )
+        if (!isCalendar(value.calendars?.halloween) || !isCalendar(value.calendars?.christmas))
           throw new Error("Invalid saved calendars");
         setCalendars(value.calendars);
-        if (value.season === "halloween" || value.season === "christmas")
-          setSeason(value.season);
-        if (["US", "GB", "CA", "AU"].includes(value.region))
-          setRegion(value.region);
+        if (value.season === "halloween" || value.season === "christmas") setSeason(value.season);
+        if (["US", "GB", "CA", "AU"].includes(value.region)) setRegion(value.region);
       })
       .catch(() =>
-        setError(
-          "Your saved calendar could not be loaded. Default collections are available.",
-        ),
+        setError("Your saved calendar could not be loaded. Default collections are available."),
       )
       .finally(() => setLoaded(true));
     const timer = setInterval(() => setNow(new Date()), 30000);
-    const listener = AppState.addEventListener("change", () =>
-      setNow(new Date()),
-    );
+    const listener = AppState.addEventListener("change", () => setNow(new Date()));
     return () => {
       clearInterval(timer);
       listener.remove();
@@ -168,10 +152,9 @@ function MovieApp() {
   }, []);
   useEffect(() => {
     if (loaded)
-      AsyncStorage.setItem(
-        "reelritual:v1",
-        JSON.stringify({ calendars, season, region }),
-      ).catch(() => setError("Changes could not be saved on this device."));
+      AsyncStorage.setItem("reelritual:v1", JSON.stringify({ calendars, season, region })).catch(
+        () => setError("Changes could not be saved on this device."),
+      );
   }, [calendars, season, region, loaded]);
   useEffect(() => {
     setAvailability(null);
@@ -207,12 +190,10 @@ function MovieApp() {
       });
     return () => controller.abort();
   }, [movie]);
-  const update = (c: Calendar) =>
-    setCalendars((previous) => ({ ...previous, [c.season]: c }));
+  const update = (c: Calendar) => setCalendars((previous) => ({ ...previous, [c.season]: c }));
   const openDay = (day: number) => {
     if (day > unlocked) return;
-    if (!preview && !revealed.includes(day))
-      update({ ...calendar, revealed: [...revealed, day] });
+    if (!preview && !revealed.includes(day)) update({ ...calendar, revealed: [...revealed, day] });
     setSelected(day);
   };
   const openLink = async (url: string) => {
@@ -254,9 +235,7 @@ function MovieApp() {
                   onPress={() => setTab(t)}
                   key={t}
                 >
-                  <Text
-                    className={tab === t ? "text-moss font-bold" : "text-muted"}
-                  >
+                  <Text className={tab === t ? "text-moss font-bold" : "text-muted"}>
                     {t === "Calendar" ? "My calendar" : t}
                   </Text>
                 </Pressable>
@@ -273,15 +252,10 @@ function MovieApp() {
           </Pressable>
         </View>
       </View>
-      <ScrollView
-        contentContainerStyle={{ padding: wide ? 48 : 22, paddingBottom: 40 }}
-      >
+      <ScrollView contentContainerStyle={{ padding: wide ? 48 : 22, paddingBottom: 40 }}>
         <View className="w-full max-w-7xl self-center">
           {!!error && (
-            <Pressable
-              onPress={() => setError("")}
-              className="bg-orange-100 p-4 rounded-xl mb-4"
-            >
+            <Pressable onPress={() => setError("")} className="bg-orange-100 p-4 rounded-xl mb-4">
               <Text>{error} ×</Text>
             </Pressable>
           )}
@@ -303,9 +277,7 @@ function MovieApp() {
                 >
                   <Text
                     className={
-                      season === s
-                        ? "text-white text-xs font-semibold"
-                        : "text-muted text-xs"
+                      season === s ? "text-white text-xs font-semibold" : "text-muted text-xs"
                     }
                   >
                     {seasonInfo[s].emoji} {seasonInfo[s].label}
@@ -317,11 +289,7 @@ function MovieApp() {
           {tab === "Calendar" && (
             <>
               <LinearGradient
-                colors={
-                  season === "halloween"
-                    ? ["#ece8dc", "#e4e9db"]
-                    : ["#e5ebdf", "#f0ebe0"]
-                }
+                colors={season === "halloween" ? ["#ece8dc", "#e4e9db"] : ["#e5ebdf", "#f0ebe0"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={{
@@ -412,8 +380,7 @@ function MovieApp() {
               </View>
               {preview && (
                 <Text className="text-moss bg-white p-3 rounded-lg mb-4 text-sm">
-                  Preview mode · All days are open. Your real progress stays
-                  saved.
+                  Preview mode · All days are open. Your real progress stays saved.
                 </Text>
               )}
               <View className="flex-row flex-wrap" style={{ gap: 10 }}>
@@ -469,11 +436,7 @@ function MovieApp() {
                         className="text-xs"
                         style={{ color: locked ? "#aaa99d" : "#496347" }}
                       >
-                        {seen
-                          ? m.title
-                          : locked
-                            ? "A story awaits"
-                            : "Tap to unwrap"}
+                        {seen ? m.title : locked ? "A story awaits" : "Tap to unwrap"}
                       </Text>
                     </Pressable>
                   );
@@ -482,9 +445,7 @@ function MovieApp() {
               <View className="bg-white border border-line rounded-2xl p-5 mt-7 flex-row items-center gap-4">
                 <Ionicons name="sparkles-outline" size={26} color="#496347" />
                 <View className="flex-1">
-                  <Text className="font-semibold text-ink">
-                    Your season, your kind of cinema.
-                  </Text>
+                  <Text className="font-semibold text-ink">Your season, your kind of cinema.</Text>
                   <Text className="text-muted text-sm mt-1">
                     Pick a curated collection or bring your own favorites.
                   </Text>
@@ -503,24 +464,16 @@ function MovieApp() {
             <>
               <Heading>Find your seasonal mood.</Heading>
               {catalog.busy && (
-                <ActivityIndicator
-                  accessibilityLabel="Loading collections"
-                  color="#496347"
-                />
+                <ActivityIndicator accessibilityLabel="Loading collections" color="#496347" />
               )}
-              {!!catalog.message && (
-                <Text className="text-muted mt-3">{catalog.message}</Text>
-              )}
+              {!!catalog.message && <Text className="text-muted mt-3">{catalog.message}</Text>}
               {!catalog.busy && (
                 <Pressable accessibilityRole="button" onPress={catalog.retry}>
-                  <Text className="text-moss underline py-3">
-                    Refresh collections
-                  </Text>
+                  <Text className="text-moss underline py-3">Refresh collections</Text>
                 </Pressable>
               )}
               <Text className="text-muted mt-3 mb-7">
-                Handpicked movie nights. Choose a collection to fill your
-                calendar.
+                Handpicked movie nights. Choose a collection to fill your calendar.
               </Text>
               <View className="flex-row flex-wrap gap-5">
                 {catalog.collections.map((c) => (
@@ -543,9 +496,7 @@ function MovieApp() {
                         {c.badge} · {c.movies.length} MOVIES
                       </Text>
                       <Heading>{c.name}</Heading>
-                      <Text className="text-muted leading-6 mt-3 mb-5">
-                        {c.description}
-                      </Text>
+                      <Text className="text-muted leading-6 mt-3 mb-5">{c.description}</Text>
                       <Button
                         title="Use this collection"
                         onPress={() =>
@@ -564,8 +515,8 @@ function MovieApp() {
                 ))}
               </View>
               <Text className="text-muted text-xs mt-6">
-                Collections are editorial suggestions. Check individual movie
-                ratings for your household.
+                Collections are editorial suggestions. Check individual movie ratings for your
+                household.
               </Text>
             </>
           )}
@@ -573,12 +524,10 @@ function MovieApp() {
             <View style={{ maxWidth: 720 }}>
               <Heading>A calendar made by you.</Heading>
               <Text className="text-muted mt-3 mb-7 leading-6">
-                Search TMDB and choose up to {info.days} movies. Reorder your
-                picks below, or shuffle them when you start your calendar.
+                Search TMDB and choose up to {info.days} movies. Reorder your picks below, or
+                shuffle them when you start your calendar.
               </Text>
-              <Text className="text-ink font-semibold mb-2">
-                Collection name
-              </Text>
+              <Text className="text-ink font-semibold mb-2">Collection name</Text>
               <TextInput
                 accessibilityLabel="Collection name"
                 value={listName}
@@ -586,18 +535,12 @@ function MovieApp() {
                 maxLength={70}
                 className="bg-white border border-line rounded-xl p-4 text-ink mb-5"
               />
-              <MoviePicker
-                movies={proposedMovies}
-                onChange={setProposedMovies}
-                limit={info.days}
-              />
+              <MoviePicker movies={proposedMovies} onChange={setProposedMovies} limit={info.days} />
               <View className="h-5" />
               <Button
                 title="Create my calendar"
                 disabled={
-                  !listName.trim() ||
-                  !proposedMovies.length ||
-                  proposedMovies.length > info.days
+                  !listName.trim() || !proposedMovies.length || proposedMovies.length > info.days
                 }
                 onPress={() =>
                   setPending({
@@ -638,24 +581,12 @@ function MovieApp() {
               className="flex-1 items-center gap-1"
             >
               <Ionicons
-                name={
-                  (
-                    [
-                      "calendar-outline",
-                      "albums-outline",
-                      "list-outline",
-                    ] as const
-                  )[i]
-                }
+                name={(["calendar-outline", "albums-outline", "list-outline"] as const)[i]}
                 size={21}
                 color={tab === t ? "#496347" : "#92948a"}
               />
               <Text
-                className={
-                  tab === t
-                    ? "text-moss text-xs font-semibold"
-                    : "text-muted text-xs"
-                }
+                className={tab === t ? "text-moss text-xs font-semibold" : "text-muted text-xs"}
               >
                 {t}
               </Text>
@@ -690,10 +621,7 @@ function MovieApp() {
               <View className="items-center my-6">
                 {detailsBusy ? (
                   <View style={{ height: 240, justifyContent: "center" }}>
-                    <ActivityIndicator
-                      accessibilityLabel="Loading movie details"
-                      color="#496347"
-                    />
+                    <ActivityIndicator accessibilityLabel="Loading movie details" color="#496347" />
                   </View>
                 ) : details?.posterUrl && !posterFailed ? (
                   <Image
@@ -706,9 +634,7 @@ function MovieApp() {
                 ) : (
                   <View className="items-center">
                     <Text style={{ fontSize: 65 }}>🎬</Text>
-                    <Text className="text-muted text-xs mt-2">
-                      Poster unavailable
-                    </Text>
+                    <Text className="text-muted text-xs mt-2">Poster unavailable</Text>
                   </View>
                 )}
               </View>
@@ -723,13 +649,9 @@ function MovieApp() {
                     movie?.description ||
                     "A synopsis isn’t available for this movie yet."}
               </Text>
-              <Text className="font-semibold text-ink mb-3">
-                Where to watch · {region}
-              </Text>
+              <Text className="font-semibold text-ink mb-3">Where to watch · {region}</Text>
               {busy && <ActivityIndicator color="#496347" />}
-              {!!providerError && (
-                <Text className="text-red-700 mb-3">{providerError}</Text>
-              )}
+              {!!providerError && <Text className="text-red-700 mb-3">{providerError}</Text>}
               {availability && (
                 <Pressable
                   accessibilityRole="link"
@@ -748,18 +670,13 @@ function MovieApp() {
               ))}
               {!availability && !busy && (
                 <Text className="text-muted text-sm mb-4 leading-5">
-                  Check current streaming, rental, and purchase options.
-                  Availability depends on your country.
+                  Check current streaming, rental, and purchase options. Availability depends on
+                  your country.
                 </Text>
               )}
               <Button
-                title={
-                  availability ? "View watch options ↗" : "Find on JustWatch ↗"
-                }
-                onPress={() =>
-                  movie &&
-                  openLink(availability?.link ?? watchSearch(movie, region))
-                }
+                title={availability ? "View watch options ↗" : "Find on JustWatch ↗"}
+                onPress={() => movie && openLink(availability?.link ?? watchSearch(movie, region))}
               />
               <View className="mt-3">
                 <Button
@@ -776,8 +693,8 @@ function MovieApp() {
               {(availability || details) && (
                 <Text className="text-muted text-xs mt-3">
                   {availability ? "Availability by JustWatch via TMDB. " : ""}
-                  Movie information and images from TMDB. This product uses the
-                  TMDB API but is not endorsed or certified by TMDB.
+                  Movie information and images from TMDB. This product uses the TMDB API but is not
+                  endorsed or certified by TMDB.
                 </Text>
               )}
               <View className="border-t border-line mt-6 pt-5">
@@ -812,15 +729,10 @@ function MovieApp() {
         onRequestClose={() => setSettings(false)}
       >
         <View className="flex-1 bg-black/50 justify-center items-center p-5">
-          <View
-            className="bg-paper rounded-3xl w-full max-w-lg"
-            style={{ maxHeight: "90%" }}
-          >
+          <View className="bg-paper rounded-3xl w-full max-w-lg" style={{ maxHeight: "90%" }}>
             <ScrollView contentContainerStyle={{ padding: 28 }}>
               <Heading>Your preferences</Heading>
-              <Text className="font-semibold text-ink mt-6 mb-3">
-                Watch region
-              </Text>
+              <Text className="font-semibold text-ink mt-6 mb-3">Watch region</Text>
               <View className="flex-row gap-2">
                 {["US", "GB", "CA", "AU"].map((r) => (
                   <Pressable
@@ -829,15 +741,11 @@ function MovieApp() {
                     onPress={() => setRegion(r)}
                     className={`p-3 rounded-xl ${r === region ? "bg-moss" : "bg-white"}`}
                   >
-                    <Text className={r === region ? "text-white" : "text-ink"}>
-                      {r}
-                    </Text>
+                    <Text className={r === region ? "text-white" : "text-ink"}>{r}</Text>
                   </Pressable>
                 ))}
               </View>
-              <Text className="font-semibold text-ink mt-6 mb-3">
-                Season year
-              </Text>
+              <Text className="font-semibold text-ink mt-6 mb-3">Season year</Text>
               <View className="flex-row gap-2">
                 {[now.getFullYear(), now.getFullYear() + 1].map((y) => (
                   <Button
@@ -868,8 +776,8 @@ function MovieApp() {
                 />
               </View>
               <Text className="text-muted text-sm mb-6">
-                Calendars and watch progress are saved on this device. Days
-                unlock at midnight in your local time.
+                Calendars and watch progress are saved on this device. Days unlock at midnight in
+                your local time.
               </Text>
               <Button title="Done" onPress={() => setSettings(false)} />
               <Credits />
@@ -887,10 +795,9 @@ function MovieApp() {
           <View className="bg-paper rounded-3xl p-7 w-full max-w-lg">
             <Heading>Make it a movie season.</Heading>
             <Text className="text-muted leading-6 mt-4 mb-6">
-              {pending?.name} · {pending?.movies.length} movies ·{" "}
-              {pending?.year}
-              {"\n\n"}This replaces your {info.label} calendar and resets its
-              watch progress. Keep the listed order or shuffle for a surprise.
+              {pending?.name} · {pending?.movies.length} movies · {pending?.year}
+              {"\n\n"}This replaces your {info.label} calendar and resets its watch progress. Keep
+              the listed order or shuffle for a surprise.
             </Text>
             <Button
               title="Start in listed order"
@@ -906,18 +813,14 @@ function MovieApp() {
                 secondary
                 title="Shuffle & start"
                 onPress={() => {
-                  if (pending)
-                    update({ ...pending, movies: shuffled(pending.movies) });
+                  if (pending) update({ ...pending, movies: shuffled(pending.movies) });
                   setPending(null);
                   setPreview(false);
                   setTab("Calendar");
                 }}
               />
             </View>
-            <Pressable
-              onPress={() => setPending(null)}
-              className="p-4 items-center"
-            >
+            <Pressable onPress={() => setPending(null)} className="p-4 items-center">
               <Text className="text-muted">Cancel</Text>
             </Pressable>
           </View>

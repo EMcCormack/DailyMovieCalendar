@@ -35,7 +35,4 @@ export interface ApiResult {
 }
 export type Api = (url: URL) => Promise<ApiResult>;
 export type CollectionsReader = (season: Season) => Promise<Collection[]>;
-export type Fetcher = (
-  url: URL,
-  options: RequestInit,
-) => Promise<Pick<Response, "ok" | "json">>;
+export type Fetcher = (url: URL, options: RequestInit) => Promise<Pick<Response, "ok" | "json">>;

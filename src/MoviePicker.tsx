@@ -1,12 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Image,
-  Pressable,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { ActivityIndicator, Image, Pressable, Text, TextInput, View } from "react-native";
 import { Movie } from "./calendar";
 import { searchMovies } from "./providers";
 export function MoviePicker({
@@ -18,14 +11,15 @@ export function MoviePicker({
   onChange: (movies: Movie[]) => void;
   limit: number;
 }) {
-  const [query, setQuery] = useState("");
-  const [page, setPage] = useState(1);
+  const [request, setRequest] = useState({ query: "", page: 1, reload: 0 });
+  const { query, page } = request;
   const [totalPages, setTotalPages] = useState(0);
   const [results, setResults] = useState<Movie[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [retry, setRetry] = useState(0);
+  const reload = () => setRequest((current) => ({ ...current, reload: current.reload + 1 }));
   useEffect(() => {
+    const { query, page } = request;
     const controller = new AbortController();
     setResults([]);
     setError("");
@@ -54,7 +48,7 @@ export function MoviePicker({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [query, page, retry]);
+  }, [request]);
   const move = (index: number, offset: number) => {
     const next = [...movies];
     [next[index], next[index + offset]] = [next[index + offset], next[index]];
@@ -67,47 +61,33 @@ export function MoviePicker({
         placeholder="Search TMDB for a movie…"
         value={query}
         onChangeText={(text) => {
-          setQuery(text);
-          setPage(1);
+          setRequest((current) => ({ ...current, query: text, page: 1 }));
         }}
         maxLength={200}
         className="bg-white border border-line rounded-xl p-4 text-ink"
       />
       {busy && (
-        <ActivityIndicator
-          accessibilityLabel="Searching movies"
-          className="my-4"
-          color="#496347"
-        />
+        <ActivityIndicator accessibilityLabel="Searching movies" className="my-4" color="#496347" />
       )}
       {!!error && (
         <View className="my-3">
           <Text className="text-red-700">{error}</Text>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setRetry(retry + 1)}
-          >
+          <Pressable accessibilityRole="button" onPress={reload}>
             <Text className="text-moss underline py-3">Retry search</Text>
           </Pressable>
         </View>
       )}
       {!busy && !error && query.trim().length >= 2 && !results.length && (
-        <Text className="text-muted my-3">
-          No movies found. Try another title.
-        </Text>
+        <Text className="text-muted my-3">No movies found. Try another title.</Text>
       )}
       {results.map((movie) => {
         const added = movies.some(
           (m) =>
             m.tmdbId === movie.tmdbId ||
-            (m.title.toLowerCase() === movie.title.toLowerCase() &&
-              m.year === movie.year),
+            (m.title.toLowerCase() === movie.title.toLowerCase() && m.year === movie.year),
         );
         return (
-          <View
-            key={movie.id}
-            className="flex-row gap-3 items-center border-b border-line py-3"
-          >
+          <View key={movie.id} className="flex-row gap-3 items-center border-b border-line py-3">
             {movie.posterUrl ? (
               <Image
                 source={{ uri: movie.posterUrl }}
@@ -133,11 +113,7 @@ export function MoviePicker({
               className="p-3"
             >
               <Text
-                className={
-                  added || movies.length >= limit
-                    ? "text-muted"
-                    : "text-moss font-bold"
-                }
+                className={added || movies.length >= limit ? "text-muted" : "text-moss font-bold"}
               >
                 {added ? "Added" : "Add +"}
               </Text>
@@ -147,21 +123,20 @@ export function MoviePicker({
       })}
       {!busy && totalPages > 1 && (
         <View className="flex-row justify-between items-center my-3">
-          <Pressable disabled={page === 1} onPress={() => setPage(page - 1)}>
-            <Text className={page === 1 ? "text-muted" : "text-moss"}>
-              Previous
-            </Text>
+          <Pressable
+            disabled={page === 1}
+            onPress={() => setRequest((current) => ({ ...current, page: page - 1 }))}
+          >
+            <Text className={page === 1 ? "text-muted" : "text-moss"}>Previous</Text>
           </Pressable>
           <Text className="text-muted text-xs">
             Page {page} of {totalPages}
           </Text>
           <Pressable
             disabled={page === totalPages}
-            onPress={() => setPage(page + 1)}
+            onPress={() => setRequest((current) => ({ ...current, page: page + 1 }))}
           >
-            <Text className={page === totalPages ? "text-muted" : "text-moss"}>
-              Next
-            </Text>
+            <Text className={page === totalPages ? "text-muted" : "text-moss"}>Next</Text>
           </Pressable>
         </View>
       )}
@@ -169,15 +144,10 @@ export function MoviePicker({
         Your movies · {movies.length} / {limit}
       </Text>
       {!movies.length && (
-        <Text className="text-muted mb-3">
-          Search and add your first movie above.
-        </Text>
+        <Text className="text-muted mb-3">Search and add your first movie above.</Text>
       )}
       {movies.map((movie, index) => (
-        <View
-          key={movie.id}
-          className="flex-row items-center border-b border-line py-2 gap-1"
-        >
+        <View key={movie.id} className="flex-row items-center border-b border-line py-2 gap-1">
           <Text className="text-ink flex-1">
             {index + 1}. {movie.title}
           </Text>
@@ -192,10 +162,7 @@ export function MoviePicker({
             >
               <Text
                 style={{
-                  opacity:
-                    index + offset < 0 || index + offset >= movies.length
-                      ? 0.25
-                      : 1,
+                  opacity: index + offset < 0 || index + offset >= movies.length ? 0.25 : 1,
                 }}
               >
                 {offset === -1 ? "↑" : "↓"}

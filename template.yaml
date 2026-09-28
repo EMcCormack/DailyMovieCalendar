@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
-Description: Reel Ritual noncommercial movie API. Lambda has no customer VPC or NAT gateway.
+Description: Daily Movie Calendar noncommercial movie API. Lambda has no customer VPC or NAT gateway.
 Parameters:
   AllowedOrigin:
     Type: String
@@ -8,7 +8,7 @@ Parameters:
     Description: Exact allowed web origin. Native apps are not restricted by browser CORS.
   TmdbTokenParameterName:
     Type: String
-    Default: /reel-ritual/tmdb-token
+    Default: /daily-movie-calendar/tmdb-token
     AllowedPattern: "^/[a-zA-Z0-9_./-]+$"
     Description: Existing standard SSM SecureString parameter using the default aws/ssm encryption key. Pass its name, not the token.
 Resources:

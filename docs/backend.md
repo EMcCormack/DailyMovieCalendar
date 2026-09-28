@@ -1,6 +1,6 @@
 # TypeScript backend on AWS
 
-Reel Ritual uses API Gateway HTTP API → Lambda → DynamoDB, with Lambda also calling TMDB. All backend source, tests, and publishing scripts are TypeScript. The deployment artifact is generated JavaScript; the old handwritten `.mjs` server files have been removed.
+Daily Movie Calendar uses API Gateway HTTP API → Lambda → DynamoDB, with Lambda also calling TMDB. All backend source, tests, and publishing scripts are TypeScript. The deployment artifact is generated JavaScript; the old handwritten `.mjs` server files have been removed.
 
 Lambda has **no customer VPC configuration**. No NAT gateway, RDS instance, load balancer, or provisioned Lambda concurrency is created. DynamoDB uses on-demand billing. This is the architecture behind the small-usage cost estimate; actual charges depend on requests, compute, database usage, logs, and transfer. API throttling and concurrency settings limit load but are not a spending cap.
 
@@ -18,11 +18,13 @@ Without `COLLECTIONS_TABLE`, the local server serves the bundled fixture collect
 
 ## Deploy when ready
 
+The [GitHub Actions deployment guide](github-actions.md) covers the repeatable backend release workflow and its one-time AWS/GitHub setup. The commands below remain useful for a first local deployment or troubleshooting. Both paths deploy this SAM template through CloudFormation.
+
 No AWS resources are provisioned merely by building or testing this repository. The following deployment and publishing commands create cloud resources or write cloud data when you run them.
 
 Prerequisites: AWS CLI credentials, AWS SAM CLI, and permissions to create the stack's resources. Use a single region, for example `us-east-1`.
 
-1. In AWS Systems Manager Parameter Store, create a **Standard SecureString** named `/reel-ritual/tmdb-token`. Enter the TMDB token through the console; use the default `aws/ssm` encryption key. The stack references this existing parameter and does not contain the token. A custom KMS key needs an additional scoped `kms:Decrypt` permission.
+1. In AWS Systems Manager Parameter Store, create a **Standard SecureString** named `/daily-movie-calendar/tmdb-token`. Enter the TMDB token through the console; use the default `aws/ssm` encryption key. The stack references this existing parameter and does not contain the token. A custom KMS key needs an additional scoped `kms:Decrypt` permission.
 2. Build and validate locally:
 
    ```sh
@@ -38,7 +40,7 @@ Prerequisites: AWS CLI credentials, AWS SAM CLI, and permissions to create the s
    sam deploy --template-file template.yaml --guided --region us-east-1
    ```
 
-   Choose a stack name such as `reel-ritual-dev`, provide your exact web origin for `AllowedOrigin`, and the parameter name for `TmdbTokenParameterName`. Allow SAM to create the Lambda execution role. SAM uploads `build/server/`; no separate npm install or SAM build step is required. Run `pnpm backend:build` before every deployment.
+   Choose a stack name such as `daily-movie-calendar-dev`, provide your exact web origin for `AllowedOrigin`, and the parameter name for `TmdbTokenParameterName`. Allow SAM to create the Lambda execution role. SAM uploads `build/server/`; no separate npm install or SAM build step is required. Run `pnpm backend:build` before every deployment. The guided command saves local settings in the ignored `samconfig.toml`; later local deployments can use `sam deploy --template-file template.yaml`.
 
 4. Set `EXPO_PUBLIC_MOVIE_API_URL` to the stack's `ApiUrl` output and restart/rebuild the app.
 5. Publish the starter collections using the process below.
@@ -62,7 +64,7 @@ Set these server-side environment variables in `.env` or your shell:
 ```dotenv
 AWS_REGION=us-east-1
 COLLECTIONS_TABLE=<CollectionsTableName stack output>
-TMDB_TOKEN_PARAMETER=/reel-ritual/tmdb-token
+TMDB_TOKEN_PARAMETER=/daily-movie-calendar/tmdb-token
 ```
 
 The script uses `TMDB_READ_TOKEN` if set; otherwise it reads the SSM parameter. Your CLI identity needs `ssm:GetParameter` when using SSM and `dynamodb:PutItem` on the collection table when publishing. The Lambda role deliberately has no write access.

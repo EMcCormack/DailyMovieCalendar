@@ -1,0 +1,79 @@
+name: Deploy backend
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: backend-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master') ||
+      (github.event_name == 'release' && !github.event.release.prerelease && startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      STACK_NAME: ${{ vars.AWS_STACK_NAME }}
+      ARTIFACT_BUCKET: ${{ vars.AWS_ARTIFACT_BUCKET }}
+      CLOUDFORMATION_EXECUTION_ROLE_ARN: ${{ vars.CLOUDFORMATION_EXECUTION_ROLE_ARN }}
+      ALLOWED_ORIGIN: ${{ vars.ALLOWED_ORIGIN }}
+      TMDB_TOKEN_PARAMETER: ${{ vars.TMDB_TOKEN_PARAMETER }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.3.4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm backend:build
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: aws-actions/setup-sam@v2
+      - name: Validate and deploy CloudFormation stack
+        run: |
+          : "${AWS_REGION:?Set the production AWS_REGION variable}"
+          : "${STACK_NAME:?Set the production AWS_STACK_NAME variable}"
+          : "${ARTIFACT_BUCKET:?Set the production AWS_ARTIFACT_BUCKET variable}"
+          : "${CLOUDFORMATION_EXECUTION_ROLE_ARN:?Set the production CLOUDFORMATION_EXECUTION_ROLE_ARN variable}"
+          : "${ALLOWED_ORIGIN:?Set the production ALLOWED_ORIGIN variable}"
+          : "${TMDB_TOKEN_PARAMETER:?Set the production TMDB_TOKEN_PARAMETER variable}"
+          sam validate --lint --template-file template.yaml --region "$AWS_REGION"
+          sam deploy \
+            --template-file template.yaml \
+            --stack-name "$STACK_NAME" \
+            --region "$AWS_REGION" \
+            --s3-bucket "$ARTIFACT_BUCKET" \
+            --role-arn "$CLOUDFORMATION_EXECUTION_ROLE_ARN" \
+            --capabilities CAPABILITY_IAM \
+            --parameter-overrides \
+              "AllowedOrigin=$ALLOWED_ORIGIN" \
+              "TmdbTokenParameterName=$TMDB_TOKEN_PARAMETER" \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset
+      - name: Check deployed API
+        run: |
+          API_URL="$(aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" \
+            --region "$AWS_REGION" \
+            --query 'Stacks[0].Outputs[?OutputKey==`ApiUrl`].OutputValue | [0]' \
+            --output text)"
+          test -n "$API_URL" && test "$API_URL" != "None"
+          curl --fail --silent --show-error --retry 3 "$API_URL/health"
+          curl --fail --silent --show-error --retry 3 "$API_URL/api/collections?season=christmas" > /dev/null
+          echo "API URL: $API_URL"

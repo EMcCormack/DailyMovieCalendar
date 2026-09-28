@@ -1,4 +1,4 @@
-# Reel Ritual
+# Daily Movie Calendar
 
 A seasonal movie advent calendar for Android, iOS, and web, built with Expo 57, React Native, TypeScript, and NativeWind. Uses pnpm exclusively.
 
@@ -45,7 +45,7 @@ The same configuration enables movie posters and synopses through `/api/movie`. 
 
 The Node server looks up selected movies by TMDB ID. For legacy calendars, it accepts only an unambiguous exact normalized title match (and supplied year) before querying regional providers. It caches availability for one hour and returns no match instead of guessing. The app falls back to search links if data is unavailable. The token stays on the server; never use an `EXPO_PUBLIC_` prefix for it.
 
-Deploy the TypeScript Lambda backend using `template.yaml` and AWS SAM. It uses API Gateway HTTP API, on-demand DynamoDB, and SSM Parameter Store with no customer VPC or NAT gateway. See the backend guide for build, deployment, and publishing steps. Mobile API calls do not depend on browser CORS. Availability data comes from JustWatch via TMDB and uses TMDB's supplied watch-page link; it does not invent individual service deep links or prices. TMDB and JustWatch attribution is included in Settings → About & credits, with JustWatch also credited beside watch results.
+Deploy the TypeScript Lambda backend using `template.yaml` (an AWS SAM/CloudFormation template) and the [GitHub Actions deployment workflow](docs/github-actions.md). It uses API Gateway HTTP API, on-demand DynamoDB, and SSM Parameter Store with no customer VPC or NAT gateway. See the backend guide for local development and collection publishing steps. Mobile API calls do not depend on browser CORS. Availability data comes from JustWatch via TMDB and uses TMDB's supplied watch-page link; it does not invent individual service deep links or prices. TMDB and JustWatch attribution is included in Settings → About & credits, with JustWatch also credited beside watch results.
 
 ## Validation
 
@@ -63,4 +63,4 @@ References: [Expo SDK 57](https://docs.expo.dev/versions/v57.0.0/), [NativeWind 
 
 TypeScript 7 is intentionally excluded from Expo's dependency-version check (which recommends TypeScript 6). It is checked separately with `pnpm typecheck`.
 
-For AWS deployment, API routes, and publishing curated collections, see [Backend setup](docs/backend.md). This project is noncommercial and uses TMDB’s developer API.
+For backend deployment and GitHub-orchestrated EAS Android builds, see [GitHub Actions releases](docs/github-actions.md). For API routes and publishing curated collections, see [Backend setup](docs/backend.md). This project is noncommercial and uses TMDB’s developer API.

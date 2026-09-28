@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Reel Ritual",
-    "slug": "reel-ritual",
+    "name": "Daily Movie Calendar",
+    "slug": "daily-movie-calendar",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,6 +10,8 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.emccormack.dailymoviecalendar",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",

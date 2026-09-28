@@ -1,0 +1,19 @@
+{
+  "cli": {
+    "appVersionSource": "local"
+  },
+  "build": {
+    "base": {
+      "node": "24.21.0",
+      "pnpm": "12.3.4",
+      "environment": "production"
+    },
+    "preview": {
+      "extends": "base",
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
+    }
+  }
+}

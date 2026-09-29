@@ -2,7 +2,7 @@
 
 Daily Movie Calendar uses API Gateway HTTP API → Lambda → DynamoDB, with Lambda also calling TMDB. All backend source, tests, and publishing scripts are TypeScript. The deployment artifact is generated JavaScript; the old handwritten `.mjs` server files have been removed.
 
-Lambda has **no customer VPC configuration**. No NAT gateway, RDS instance, load balancer, or provisioned Lambda concurrency is created. DynamoDB uses on-demand billing. This is the architecture behind the small-usage cost estimate; actual charges depend on requests, compute, database usage, logs, and transfer. API throttling and concurrency settings limit load but are not a spending cap.
+Lambda has **no customer VPC configuration**. No NAT gateway, RDS instance, load balancer, or reserved or provisioned Lambda concurrency is created. DynamoDB uses on-demand billing. This is the architecture behind the small-usage cost estimate; actual charges depend on requests, compute, database usage, logs, and transfer. API throttling limits load but is not a spending cap.
 
 ## Local development
 
@@ -47,7 +47,7 @@ Prerequisites: AWS CLI credentials, AWS SAM CLI, and permissions to create the s
 
 The stack creates:
 
-- Node.js 24 Lambda on ARM64, 256 MB, 25-second timeout, reserved concurrency 5. Accounts with unusually low concurrency quotas may need to adjust this reservation.
+- Node.js 24 Lambda on ARM64, 256 MB, 25-second timeout. It uses the account's unreserved concurrency pool, so account-wide Lambda quotas still apply.
 - HTTP API with five GET routes, CORS, 5 requests/second steady throttling and a burst of 10.
 - A DynamoDB table with `pk` and `sk` keys, on-demand billing, and encryption at rest.
 - Seven-day Lambda log retention.

@@ -25,6 +25,7 @@ jobs:
       STACK_NAME: ${{ vars.AWS_STACK_NAME }}
       ARTIFACT_BUCKET: ${{ vars.AWS_ARTIFACT_BUCKET }}
       CLOUDFORMATION_EXECUTION_ROLE_ARN: ${{ vars.CLOUDFORMATION_EXECUTION_ROLE_ARN }}
+      AWS_DEPLOY_ROLE_ARN: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
       ALLOWED_ORIGIN: ${{ vars.ALLOWED_ORIGIN }}
       TMDB_TOKEN_PARAMETER: ${{ vars.TMDB_TOKEN_PARAMETER }}
     steps:
@@ -42,7 +43,7 @@ jobs:
       - run: pnpm backend:build
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          role-to-assume: ${{ env.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
       - uses: aws-actions/setup-sam@v2
       - name: Validate and deploy CloudFormation stack

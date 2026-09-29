@@ -50,7 +50,6 @@ Resources:
       Architectures: [arm64]
       MemorySize: 256
       Timeout: 25
-      ReservedConcurrentExecutions: 5
       Environment:
         Variables:
           COLLECTIONS_TABLE: !Ref CollectionsTable

@@ -14,6 +14,7 @@ test("deployment keeps Lambda outside a customer VPC and provisions pay-per-requ
   const resources = template.Resources;
   assert.equal(resources.MovieFunction.Properties.Runtime, "nodejs24.x");
   assert.equal(resources.MovieFunction.Properties.VpcConfig, undefined);
+  assert.equal(resources.MovieFunction.Properties.ReservedConcurrentExecutions, undefined);
   assert.equal(resources.CollectionsTable.Properties.BillingMode, "PAY_PER_REQUEST");
   assert.equal(resources.CollectionsTable.DeletionPolicy, "Retain");
   assert.equal(resources.FunctionLogs.Properties.RetentionInDays, 7);

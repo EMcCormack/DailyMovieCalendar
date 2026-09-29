@@ -92,7 +92,10 @@ test("Lambda adapter parses HTTP API events without secrets for public collectio
   assert.ok(!failure.body?.includes("secret-value"));
 });
 test("seed resolves unique titles once, preserves order, and rejects ambiguous IDs", async () => {
-  const small = { ...collection, movies: collection.movies.slice(0, 2) };
+  const small = {
+    ...collection,
+    movies: collection.movies.slice(0, 2).map((movie) => ({ ...movie, tmdbId: undefined })),
+  };
   let count = 0;
   const result = await resolveCollections([small, { ...small, id: "second" }], async () => [
     ++count,
@@ -108,4 +111,19 @@ test("seed resolves unique titles once, preserves order, and rejects ambiguous I
     resolveCollections([small], async () => [1, 2]),
     /Review TMDB match/,
   );
+});
+
+test("curated collections have pinned TMDB IDs and seed without title searches", async () => {
+  let lookups = 0;
+  const resolved = await resolveCollections(collections, async () => {
+    lookups++;
+    return [];
+  });
+  assert.equal(lookups, 0);
+  assert.deepEqual(resolved, collections);
+  for (const collection of collections)
+    for (const movie of collection.movies) {
+      assert.ok(Number.isSafeInteger(movie.tmdbId) && movie.tmdbId! > 0);
+      assert.equal(movie.id, `tmdb:${movie.tmdbId}`);
+    }
 });

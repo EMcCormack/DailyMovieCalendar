@@ -47,7 +47,7 @@
     "test": "node --import tsx --test src/*.test.ts server/*.test.ts",
     "server": "node --env-file-if-exists=.env --import tsx server/index.ts",
     "backend:build": "esbuild server/handler.ts --bundle --platform=node --target=node24 --format=cjs --outfile=build/server/handler.js",
-    "backend:seed": "node --env-file-if-exists=.env --import tsx server/seed.ts"
+    "backend:seed": "node --import tsx server/seed.ts"
   },
   "private": true,
   "devEngines": {

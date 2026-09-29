@@ -1,19 +1,21 @@
 import type { Movie, Collection } from "../shared/models";
 const movies = (text: string, genre: string): Movie[] =>
   text.split("|").map((item) => {
-    const [title, year] = item.split("~");
-    return { id: `${title}-${year}`, title, year: Number(year), genre };
+    const [title, year, tmdbId] = item.split("~");
+    const id = Number(tmdbId);
+    if (!Number.isSafeInteger(id) || id <= 0) throw new Error(`Missing TMDB ID for ${title}`);
+    return { id: `tmdb:${id}`, tmdbId: id, title, year: Number(year), genre };
   });
 const christmas = movies(
-  "Home Alone~1990|Elf~2003|The Holiday~2006|It's a Wonderful Life~1946|Klaus~2019|The Muppet Christmas Carol~1992|The Polar Express~2004|Miracle on 34th Street~1947|Arthur Christmas~2011|How the Grinch Stole Christmas~2000|The Santa Clause~1994|A Christmas Story~1983|White Christmas~1954|Scrooged~1988|National Lampoon's Christmas Vacation~1989|Jingle All the Way~1996|Home Alone 2: Lost in New York~1992|The Christmas Chronicles~2018|Last Christmas~2019|Love Actually~2003|The Bishop's Wife~1947|A Boy Called Christmas~2021|The Family Stone~2005|Noelle~2019|A Christmas Carol~2009",
+  "Home Alone~1990~771|Elf~2003~10719|The Holiday~2006~1581|It's a Wonderful Life~1946~1585|Klaus~2019~508965|The Muppet Christmas Carol~1992~10437|The Polar Express~2004~5255|Miracle on 34th Street~1947~11881|Arthur Christmas~2011~51052|How the Grinch Stole Christmas~2000~8871|The Santa Clause~1994~11395|A Christmas Story~1983~850|White Christmas~1954~13368|Scrooged~1988~9647|National Lampoon's Christmas Vacation~1989~5825|Jingle All the Way~1996~9279|Home Alone 2: Lost in New York~1992~772|The Christmas Chronicles~2018~527435|Last Christmas~2019~549053|Love Actually~2003~508|The Bishop's Wife~1947~19490|A Boy Called Christmas~2021~615666|The Family Stone~2005~9043|Noelle~2019~454467|A Christmas Carol~2009~17979",
   "Holiday favorites",
 );
 const halloween = movies(
-  "Hocus Pocus~1993|The Nightmare Before Christmas~1993|Beetlejuice~1988|Coraline~2009|The Addams Family~1991|Practical Magic~1998|Ghostbusters~1984|Casper~1995|Edward Scissorhands~1990|Sleepy Hollow~1999|The Witches~1990|ParaNorman~2012|Frankenweenie~2012|Monster House~2006|The Haunted Mansion~2003|Halloweentown~1998|Corpse Bride~2005|Gremlins~1984|The Others~2001|The Sixth Sense~1999|The Craft~1996|Death Becomes Her~1992|Little Shop of Horrors~1986|The Lost Boys~1987|The Mummy~1999|Addams Family Values~1993|Hotel Transylvania~2012|Goosebumps~2015|The House with a Clock in Its Walls~2018|The Witches of Eastwick~1987|Hocus Pocus 2~2022",
+  "Hocus Pocus~1993~10439|The Nightmare Before Christmas~1993~9479|Beetlejuice~1988~4011|Coraline~2009~14836|The Addams Family~1991~2907|Practical Magic~1998~6435|Ghostbusters~1984~620|Casper~1995~8839|Edward Scissorhands~1990~162|Sleepy Hollow~1999~2668|The Witches~1990~10166|ParaNorman~2012~77174|Frankenweenie~2012~62214|Monster House~2006~9297|The Haunted Mansion~2003~10756|Halloweentown~1998~27850|Corpse Bride~2005~3933|Gremlins~1984~927|The Others~2001~1933|The Sixth Sense~1999~745|The Craft~1996~9100|Death Becomes Her~1992~9374|Little Shop of Horrors~1986~10776|The Lost Boys~1987~1547|The Mummy~1999~564|Addams Family Values~1993~2758|Hotel Transylvania~2012~76492|Goosebumps~2015~257445|The House with a Clock in Its Walls~2018~463821|The Witches of Eastwick~1987~6069|Hocus Pocus 2~2022~642885",
   "Spooky favorites",
 );
 const horror = movies(
-  "Halloween~1978|The Thing~1982|Alien~1979|The Shining~1980|Get Out~2017|The Conjuring~2013|Scream~1996|Psycho~1960|The Exorcist~1973|The Babadook~2014|Hereditary~2018|The Witch~2015|It Follows~2014|A Quiet Place~2018|The Descent~2005|The Ring~2002|The Blair Witch Project~1999|The Texas Chain Saw Massacre~1974|Night of the Living Dead~1968|Dawn of the Dead~1978|Suspiria~1977|The Evil Dead~1981|The Fly~1986|Carrie~1976|Candyman~1992|The Wicker Man~1973|Nosferatu~1922|Dracula~1931|Frankenstein~1931|The Invisible Man~2020|Trick ’r Treat~2007",
+  "Halloween~1978~948|The Thing~1982~1091|Alien~1979~348|The Shining~1980~694|Get Out~2017~419430|The Conjuring~2013~138843|Scream~1996~4232|Psycho~1960~539|The Exorcist~1973~9552|The Babadook~2014~242224|Hereditary~2018~493922|The Witch~2015~310131|It Follows~2014~270303|A Quiet Place~2018~447332|The Descent~2005~9392|The Ring~2002~565|The Blair Witch Project~1999~2667|The Texas Chain Saw Massacre~1974~30497|Night of the Living Dead~1968~10331|Dawn of the Dead~1978~923|Suspiria~1977~11906|The Evil Dead~1981~764|The Fly~1986~9426|Carrie~1976~7340|Candyman~1992~9529|The Wicker Man~1973~16307|Nosferatu~1922~653|Dracula~1931~138|Frankenstein~1931~3035|The Invisible Man~2020~570670|Trick ’r Treat~2007~23202",
   "Horror",
 );
 export const collections: Collection[] = [

@@ -59,23 +59,24 @@ Deleting the stack **retains its DynamoDB table** to avoid losing collections. R
 
 ## Publish curated collections
 
-Set these server-side environment variables in `.env` or your shell:
+Set these environment variables in your shell when publishing:
 
 ```dotenv
 AWS_REGION=us-east-1
 COLLECTIONS_TABLE=<CollectionsTableName stack output>
-TMDB_TOKEN_PARAMETER=/daily-movie-calendar/tmdb-token
 ```
 
-The script uses `TMDB_READ_TOKEN` if set; otherwise it reads the SSM parameter. Your CLI identity needs `ssm:GetParameter` when using SSM and `dynamodb:PutItem` on the collection table when publishing. The Lambda role deliberately has no write access.
+The curated movies have reviewed TMDB IDs in `src/collections.ts`, so publishing needs no TMDB token or SSM access. Your CLI identity needs `dynamodb:PutItem` on the collection table. The Lambda role deliberately has no write access.
 
 ```sh
 pnpm backend:seed
-# Review successful title/year matches; this command does not write DynamoDB.
+# Check the four collection counts; this command does not write DynamoDB.
 pnpm backend:seed --publish
 ```
 
-The publisher resolves all starter titles to exact TMDB IDs before starting any writes. Ambiguous/missing matches abort with the title that needs review. You can supply a verified `tmdbId` in the source data to resolve an ambiguity. Duplicate movie lookups are reused. Publishing inserts missing collections and preserves existing items with a conditional write, so retrying after a partial write is safe. It does not overwrite an edited live collection.
+Publishing requires every curated movie to have a positive TMDB ID. Publishing inserts missing collections and preserves existing items with a conditional write, so retrying after a partial write is safe. It does not overwrite an edited live collection.
+
+For future collection edits, run `node --env-file-if-exists=.env --import tsx scripts/generate-tmdb-ids.ts > tmdb-ids-review.json` to regenerate a review list from TMDB. The generator uses the local token and does not write DynamoDB. Review the IDs before editing `src/collections.ts`; remove the temporary JSON file afterward.
 
 Each item has this shape:
 

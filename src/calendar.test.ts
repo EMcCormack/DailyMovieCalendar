@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { Calendar, isCalendar, parseMovies, shuffled, unlockedDays } from "./calendar";
+import {
+  Calendar,
+  currentDayMovie,
+  isCalendar,
+  parseMovies,
+  shuffled,
+  unlockedDays,
+} from "./calendar";
 import { collections } from "./collections";
 const calendar: Calendar = {
   season: "halloween",
@@ -46,9 +53,56 @@ test("saved calendars reject corrupt progress and invalid seasons", () => {
   assert.ok(!isCalendar({ ...calendar, watched: [32] }));
   assert.ok(!isCalendar(null));
 });
+test("saved calendars round-trip with empty seasons", () => {
+  const emptyHalloween: Calendar = { ...calendar, name: "", movies: [] };
+  const emptyChristmas: Calendar = { ...emptyHalloween, season: "christmas" };
+  for (const halloween of [emptyHalloween, calendar]) {
+    const saved = JSON.parse(
+      JSON.stringify({
+        calendars: { halloween, christmas: emptyChristmas },
+        season: "halloween",
+        region: "US",
+      }),
+    );
+    assert.ok(isCalendar(saved.calendars.halloween));
+    assert.ok(isCalendar(saved.calendars.christmas));
+  }
+  assert.equal(unlockedDays(emptyHalloween, new Date(2026, 9, 3)), 0);
+});
+test("empty saved calendars still reject invalid progress", () => {
+  const empty: Calendar = { ...calendar, movies: [] };
+  assert.ok(!isCalendar({ ...empty, revealed: [1] }));
+  assert.ok(!isCalendar({ ...empty, watched: [1] }));
+});
 test("all curated calendars contain a full season of unique movies", () => {
   collections.forEach((c) => {
     assert.equal(c.movies.length, c.season === "halloween" ? 31 : 25);
     assert.equal(new Set(c.movies.map((m) => m.id)).size, c.movies.length);
   });
+});
+
+test("today's movie follows local date boundaries without changing reveal progress", () => {
+  const progress = [...calendar.revealed];
+  assert.equal(currentDayMovie(calendar, new Date(2026, 9, 1, 0, 0)), calendar.movies[0]);
+  assert.equal(currentDayMovie(calendar, new Date(2026, 9, 3, 23, 59)), calendar.movies[2]);
+  assert.equal(currentDayMovie(calendar, new Date(2026, 9, 4, 0, 0)), calendar.movies[3]);
+  assert.equal(currentDayMovie(calendar, new Date(2026, 8, 30, 23, 59)), undefined);
+  assert.equal(currentDayMovie(calendar, new Date(2026, 10, 1)), undefined);
+  assert.equal(currentDayMovie(calendar, new Date(2027, 9, 3)), undefined);
+  assert.equal(currentDayMovie({ ...calendar, movies: [] }, new Date(2026, 9, 3)), undefined);
+  assert.equal(
+    currentDayMovie({ ...calendar, movies: calendar.movies.slice(0, 2) }, new Date(2026, 9, 3)),
+    undefined,
+  );
+  assert.deepEqual(calendar.revealed, progress);
+});
+
+test("Christmas preloading stops at the end of the movie list", () => {
+  const christmas: Calendar = {
+    ...calendar,
+    season: "christmas",
+    movies: calendar.movies.slice(0, 25),
+  };
+  assert.equal(currentDayMovie(christmas, new Date(2026, 11, 25)), christmas.movies[24]);
+  assert.equal(currentDayMovie(christmas, new Date(2026, 11, 26)), undefined);
 });

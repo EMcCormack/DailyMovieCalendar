@@ -25,6 +25,11 @@ export function unlockedDays(calendar: Calendar, now = new Date()) {
     return calendar.movies.length;
   return Math.min(now.getDate(), calendar.movies.length);
 }
+export function currentDayMovie(calendar: Calendar, now = new Date()): Movie | undefined {
+  if (now.getFullYear() !== calendar.year || now.getMonth() !== seasonInfo[calendar.season].month)
+    return undefined;
+  return calendar.movies[now.getDate() - 1];
+}
 export function shuffled<T>(items: T[], random = Math.random): T[] {
   const result = [...items];
   for (let i = result.length - 1; i > 0; i--) {
@@ -57,7 +62,6 @@ export function isCalendar(value: unknown): value is Calendar {
     Number.isInteger(c.year) &&
     typeof c.name === "string" &&
     Array.isArray(c.movies) &&
-    c.movies.length > 0 &&
     c.movies.length <= seasonInfo[c.season].days &&
     c.movies.every(
       (m) =>

@@ -1,31 +1,44 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   Image,
   Pressable,
-  ScrollView,
   Text,
   TextInput,
   View,
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
-import { Movie } from "./calendar";
+import { type Movie, type Season, shuffled } from "./calendar";
+import { Ionicons } from "@expo/vector-icons";
+import DraggableFlatList from "react-native-draggable-flatlist";
+import { FlatList } from "react-native-gesture-handler";
 import { searchMovies } from "./providers";
+import { MovieDragTarget } from "./MovieDragTarget";
 export function MoviePicker({
   movies,
   onChange,
   limit,
   header,
+  onSelect,
+  startDay = 1,
+  season,
+  onDragStateChange,
 }: {
   movies: Movie[];
   onChange: (movies: Movie[]) => void;
   limit: number;
   header?: ReactNode;
+  onSelect?: (movie: Movie) => void;
+  startDay?: number;
+  season?: Season;
+  onDragStateChange?: (dragging: boolean) => void;
 }) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const scroll = useRef<ScrollView>(null);
+  const [replacing, setReplacing] = useState<number | null>(null);
+  const scroll = useRef<FlatList<Movie>>(null);
   const headerHeight = useRef(0);
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query.trim()), 350);
@@ -39,26 +52,32 @@ export function MoviePicker({
     retry: 1,
   });
   useEffect(() => {
-    if (searchReady) scroll.current?.scrollTo({ y: headerHeight.current, animated: false });
+    if (searchReady)
+      scroll.current?.scrollToOffset({ offset: headerHeight.current, animated: false });
   }, [searchReady, debouncedQuery, page, search.dataUpdatedAt]);
   const results = searchReady ? (search.data?.movies ?? []) : [];
   const totalPages = searchReady ? (search.data?.totalPages ?? 0) : 0;
   const busy = searchReady && search.isFetching;
   const error = searchReady && search.error instanceof Error ? search.error.message : "";
   const reload = () => search.refetch();
+  const announcePosition = (movie: Movie, index: number) =>
+    AccessibilityInfo.announceForAccessibility(
+      index < limit
+        ? `${movie.title} moved to day ${index + startDay}`
+        : `${movie.title} moved outside the remaining dates`,
+    );
   const move = (index: number, offset: number) => {
+    const target = index + offset;
+    if (target < 0 || target >= movies.length) return;
     const next = [...movies];
-    [next[index], next[index + offset]] = [next[index + offset], next[index]];
+    const [movie] = next.splice(index, 1);
+    next.splice(target, 0, movie);
+    setReplacing(null);
     onChange(next);
+    announcePosition(movie, target);
   };
-  return (
-    <ScrollView
-      ref={scroll}
-      style={{ flexShrink: 1 }}
-      contentContainerStyle={{ paddingBottom: 28 }}
-      stickyHeaderIndices={[1]}
-      keyboardShouldPersistTaps="handled"
-    >
+  const listHeader = (
+    <View>
       <View
         className="px-7 pt-7 pb-4"
         onLayout={(event) => {
@@ -68,6 +87,21 @@ export function MoviePicker({
         {header}
       </View>
       <View className="bg-paper px-7 py-3 border-b border-line">
+        {replacing !== null && (
+          <View className="flex-row items-center gap-3 mb-3">
+            <Text className="text-ink flex-1">
+              Replace day {replacing + startDay}: {movies[replacing]?.title}
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Cancel movie replacement"
+              onPress={() => setReplacing(null)}
+              className="p-2"
+            >
+              <Text className="text-moss">Cancel</Text>
+            </Pressable>
+          </View>
+        )}
         <View className="flex-row items-center bg-white border border-line rounded-xl">
           <TextInput
             accessibilityLabel="Search movies"
@@ -88,7 +122,7 @@ export function MoviePicker({
                 setQuery("");
                 setDebouncedQuery("");
                 setPage(1);
-                scroll.current?.scrollTo({ y: headerHeight.current, animated: false });
+                scroll.current?.scrollToOffset({ offset: headerHeight.current, animated: false });
               }}
               className="p-4"
             >
@@ -143,15 +177,30 @@ export function MoviePicker({
               </View>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`${added ? "Added" : "Add"} ${movie.title}`}
-                disabled={added || movies.length >= limit}
-                onPress={() => onChange([...movies, movie])}
+                accessibilityLabel={`${added ? "Added" : onSelect ? "Replace with" : replacing !== null ? `Replace day ${replacing + startDay} with` : "Add"} ${movie.title}`}
+                disabled={added || (!onSelect && replacing === null && movies.length >= limit)}
+                onPress={() => {
+                  if (onSelect) {
+                    onSelect(movie);
+                    return;
+                  }
+                  onChange(
+                    replacing === null
+                      ? [...movies, movie]
+                      : movies.map((current, index) => (index === replacing ? movie : current)),
+                  );
+                  setReplacing(null);
+                }}
                 className="p-3"
               >
                 <Text
-                  className={added || movies.length >= limit ? "text-muted" : "text-moss font-bold"}
+                  className={
+                    added || (!onSelect && replacing === null && movies.length >= limit)
+                      ? "text-muted"
+                      : "text-moss font-bold"
+                  }
                 >
-                  {added ? "Added" : "Add +"}
+                  {added ? "Added" : onSelect || replacing !== null ? "Replace" : "Add +"}
                 </Text>
               </Pressable>
             </View>
@@ -173,46 +222,123 @@ export function MoviePicker({
             </Pressable>
           </View>
         )}
-        <Text className="text-ink font-semibold mt-5 mb-2">
-          Your movies · {movies.length} / {limit}
-        </Text>
-        {!movies.length && (
-          <Text className="text-muted mb-3">Search and add your first movie above.</Text>
-        )}
-        {movies.map((movie, index) => (
-          <View key={movie.id} className="flex-row items-center border-b border-line py-2 gap-1">
-            <Text className="text-ink flex-1">
-              {index + 1}. {movie.title}
+        {!onSelect && (
+          <View className="flex-row items-center justify-between mt-5 mb-2">
+            <Text className="text-ink font-semibold">
+              Movies · {movies.length} / {limit}
             </Text>
-            {[-1, 1].map((offset) => (
-              <Pressable
-                key={offset}
-                accessibilityRole="button"
-                accessibilityLabel={`Move ${movie.title} ${offset === -1 ? "up" : "down"}`}
-                disabled={index + offset < 0 || index + offset >= movies.length}
-                onPress={() => move(index, offset)}
-                className="p-3"
-              >
-                <Text
-                  style={{
-                    opacity: index + offset < 0 || index + offset >= movies.length ? 0.25 : 1,
-                  }}
-                >
-                  {offset === -1 ? "↑" : "↓"}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Shuffle movie order"
+              disabled={movies.length < 2}
+              onPress={() => {
+                setReplacing(null);
+                onChange(shuffled(movies));
+              }}
+              className="flex-row items-center gap-1 p-2"
+              style={{ opacity: movies.length < 2 ? 0.4 : 1 }}
+            >
+              <Ionicons name="shuffle" size={18} color="#496347" />
+              <Text className="text-moss">Shuffle</Text>
+            </Pressable>
+          </View>
+        )}
+      </View>
+    </View>
+  );
+  return (
+    <DraggableFlatList
+      ref={scroll}
+      containerStyle={{ flex: 1 }}
+      data={onSelect ? [] : movies}
+      extraData={{ startDay, replacing }}
+      keyExtractor={(movie) => movie.id}
+      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={{ paddingBottom: 28 }}
+      ListHeaderComponent={listHeader}
+      ListEmptyComponent={
+        onSelect ? null : (
+          <Text className="text-muted px-7 mt-3">Search and add your first movie above.</Text>
+        )
+      }
+      autoscrollThreshold={80}
+      autoscrollSpeed={180}
+      onDragBegin={() => {
+        setReplacing(null);
+        onDragStateChange?.(true);
+      }}
+      onDragEnd={({ data, from, to }) => {
+        onChange(data);
+        onDragStateChange?.(false);
+        if (from !== to) announcePosition(data[to], to);
+      }}
+      renderItem={({ item: movie, getIndex, drag, isActive }) => {
+        const index = getIndex() ?? movies.findIndex((pick) => pick.id === movie.id);
+        const day = index + startDay;
+        const scheduled = index < limit;
+        return (
+          <View
+            className="mx-7 flex-row items-center border border-line rounded-xl mb-2 gap-2 px-2"
+            style={{ height: 84, backgroundColor: isActive ? "#e7ecdf" : "#fffefb" }}
+          >
+            <MovieDragTarget
+              title={movie.title}
+              index={index}
+              count={movies.length}
+              dateLabel={scheduled ? `Day ${day}` : "Unscheduled"}
+              drag={drag}
+              isActive={isActive}
+              onMove={(offset) => move(index, offset)}
+            >
+              <View className="items-center" style={{ width: 38 }}>
+                <Text className="text-muted text-xs">
+                  {!scheduled
+                    ? "EXTRA"
+                    : season === "halloween"
+                      ? "OCT"
+                      : season === "christmas"
+                        ? "DEC"
+                        : "DAY"}
                 </Text>
-              </Pressable>
-            ))}
+                <Text className="text-moss text-lg font-semibold">{scheduled ? day : "—"}</Text>
+              </View>
+              <View className="flex-1">
+                <Text numberOfLines={2} className="text-ink font-semibold">
+                  {movie.title}
+                </Text>
+                {!!movie.year && <Text className="text-muted text-xs mt-1">{movie.year}</Text>}
+              </View>
+            </MovieDragTarget>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Replace day ${day}: ${movie.title}`}
+              disabled={isActive}
+              onPress={() => {
+                setReplacing(index);
+                setQuery("");
+                setDebouncedQuery("");
+                setPage(1);
+                scroll.current?.scrollToOffset({ offset: headerHeight.current, animated: true });
+              }}
+              className="p-2"
+            >
+              <Ionicons name="swap-horizontal-outline" size={20} color="#496347" />
+            </Pressable>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={`Remove ${movie.title}`}
-              onPress={() => onChange(movies.filter((_, i) => i !== index))}
-              className="p-3"
+              disabled={isActive}
+              onPress={() => {
+                setReplacing(null);
+                onChange(movies.filter((_, i) => i !== index));
+              }}
+              className="p-2"
             >
-              <Text className="text-muted">×</Text>
+              <Ionicons name="close" size={20} color="#7c806f" />
             </Pressable>
           </View>
-        ))}
-      </View>
-    </ScrollView>
+        );
+      }}
+    />
   );
 }

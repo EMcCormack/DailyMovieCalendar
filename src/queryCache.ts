@@ -35,7 +35,7 @@ export function movieCacheOptions(storage: Storage, apiUrl: string | undefined) 
     buster: `movie-cache:v1:${apiUrl ?? ""}`,
     persister: createAsyncStoragePersister({
       storage,
-      key: "reelritual:movie-cache:v1",
+      key: "dailymoviecalendar:movie-cache:v1",
       serialize: (client) => JSON.stringify(pruneCache(client)),
       deserialize: (raw) => pruneCache(JSON.parse(raw)),
     }),

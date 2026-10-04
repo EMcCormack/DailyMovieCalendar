@@ -114,7 +114,7 @@ test("cache drops old entries and keeps only the newest 200", async () => {
     );
     // The snapshot can still be recent while an individual entry has expired.
     saved!.clientState.queries[0].state.dataUpdatedAt = now - movieCacheMaxAge - 1;
-    await storage.setItem("reelritual:movie-cache:v1", JSON.stringify(saved));
+    await storage.setItem("dailymoviecalendar:movie-cache:v1", JSON.stringify(saved));
     assert.equal((await options.persister.restoreClient())?.clientState.queries.length, 199);
   } finally {
     client.clear();

@@ -22,15 +22,16 @@ Use an Expo client compatible with SDK 57, or a native development build. Local 
 - Separate Halloween (October 1–31) and Christmas (December 1–25) calendars.
 - Local-midnight unlocking, movie reveals, and watched/unwatched tracking.
 - Curated collections served from DynamoDB through the TypeScript API, with local demo fixtures and downloaded offline fallback.
-- Search TMDB with posters and release years, add movies, remove duplicates, and reorder picks. Short lists start on the first of the seasonal month.
+- Create and edit calendars on a dedicated screen with TMDB search, adjustable start dates, and drag-and-drop movie ordering. Hold a movie row to drag it; swipe normally to scroll. Start mid-season to fill the remaining dates.
 - Preserve the supplied order or shuffle when starting a calendar.
+- Edit the start date or movie order while keeping watch progress for movies that remain on the same date. Changes are saved only when you press Save changes.
 - Device-local persistence with AsyncStorage; switching seasons preserves both calendars.
 - Preview all days outside the season without changing real watch progress.
 - JustWatch and Google links for streaming, rental, and purchase searches.
 - Movie posters and brief synopses on reveal, fetched from TMDB when the optional server is configured. Missing images and descriptions have fallback states.
 - Optional live provider listings for US, UK, Canada, and Australia.
 
-Replacing a collection or changing its year prompts before resetting progress. Lists and progress do not sync between devices. Calendar locks use the device clock and are intended for anticipation, not tamper-proof access control.
+Starting a new calendar resets its watch progress. Changing its year prompts before resetting progress. Lists and progress do not sync between devices. Calendar locks use the device clock and are intended for anticipation, not tamper-proof access control.
 
 ## TMDB configuration
 

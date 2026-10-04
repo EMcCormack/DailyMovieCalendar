@@ -12,6 +12,8 @@ export type Calendar = {
   season: Season;
   year: number;
   name: string;
+  /** Day of the season's month; older saved calendars start on day 1. */
+  startDay?: number;
   movies: Movie[];
   revealed: number[];
   watched: number[];

@@ -29,23 +29,22 @@ jobs:
       ALLOWED_ORIGIN: ${{ vars.ALLOWED_ORIGIN }}
       TMDB_TOKEN_PARAMETER: ${{ vars.TMDB_TOKEN_PARAMETER }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/setup@v1
         with:
           version: 12.3.4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-          cache: pnpm
+          runtime: node@24
+          cache: true
+          install: false
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm backend:build
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ env.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-      - uses: aws-actions/setup-sam@v2
+      - uses: aws-actions/setup-sam@v3
       - name: Validate and deploy CloudFormation stack
         run: |
           : "${AWS_REGION:?Set the production AWS_REGION variable}"

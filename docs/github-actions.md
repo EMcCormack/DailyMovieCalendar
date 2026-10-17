@@ -2,6 +2,8 @@
 
 The backend and Android app have separate GitHub Actions workflows in this repository. The backend workflow deploys the existing AWS SAM template (`template.yaml`) through CloudFormation. GitHub Releases do not deploy anything until these workflows and their account settings are in place.
 
+Both workflows use actions that target Node.js 24. `pnpm/setup` installs pnpm 12.3.4 and Node.js 24 and caches the pnpm store; dependency installation remains an explicit `pnpm install --frozen-lockfile` step.
+
 ## Backend: one-time setup
 
 1. Create the Standard SecureString TMDB token described in [backend.md](backend.md). The workflow only receives the SSM parameter **name**, never its value.

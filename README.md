@@ -4,9 +4,10 @@ A seasonal movie advent calendar for Android, iOS, and web, built with Expo 57, 
 
 ## Run
 
-Requires Node.js 24+ and pnpm 11.5.0.
+Requires Node.js 24 and pnpm 12.3.4, managed by `mise.toml`.
 
 ```sh
+mise install
 pnpm install
 pnpm start
 # Or:

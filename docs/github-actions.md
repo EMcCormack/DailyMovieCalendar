@@ -51,14 +51,58 @@ GitHub Actions tests the tagged or selected commit and queues an [EAS Build](htt
 
 The `preview` profile in `eas.json` produces an installable APK. A manual **Build Android with EAS** run from `master` or a published, non-prerelease `v*` GitHub Release queues one APK and consumes one Android build from your EAS plan allowance. No Play Store AAB or submission runs yet. When Play publishing is needed, add a production profile with `android.buildType: "app-bundle"` and use EAS Submit.
 
-### One-time setup
+### One-time setup for an installable Android APK
 
-1. Deploy the backend and copy its `ApiUrl` output. The client API URL is public and embedded in the Android bundle; the TMDB token remains server-side.
-2. Create or sign in to an Expo account. From this repository, run `pnpm dlx eas-cli@latest login` and then `pnpm dlx eas-cli@latest init`. Commit the `extra.eas.projectId` that `eas init` adds to `app.json`. Keep the app's Android package ID `com.emccormack.dailymoviecalendar` stable once distributed.
-3. Set `EXPO_PUBLIC_MOVIE_API_URL` in the EAS project's **production** environment to the backend `ApiUrl` using the Expo dashboard or `pnpm dlx eas-cli@latest env:set --name EXPO_PUBLIC_MOVIE_API_URL --value https://YOUR_API_URL --environment production --visibility plaintext`. The APK build profile selects that environment in `eas.json`. Rebuild after changing the URL.
-4. Run `pnpm dlx eas-cli@latest build --platform android --profile preview` locally once and complete the interactive EAS project and Android signing credential setup. EAS can generate and manage the Android keystore. This initial APK counts as one EAS Android build. When a future Play Store build is added, increase `android.versionCode` in `app.json` for each store release.
-5. Create an Expo personal access token and save it as the `EXPO_TOKEN` secret in the GitHub `production` environment. The environment can require reviewers and should allow `master` plus `v*` tags. Run **Build Android with EAS** manually from `master` to verify CI authentication.
+The existing `preview` profile is ready for a standalone APK that runs without an Expo development server. You need an Expo account; a Google Play developer account is not required. Run these commands from the repository root.
 
-No Android keystore or passwords need to be stored in GitHub. The `pnpm` and Node versions in `eas.json` match this repository's toolchain rather than the EAS image defaults. A native EAS build has not run until the account setup and first interactive build are completed.
+1. Install the project's Node 24 and pnpm 12.3.4 toolchain and locked dependencies:
+
+   ```sh
+   mise install
+   pnpm install --frozen-lockfile
+   ```
+
+   If a `pnpm dlx` command below stops with `ERR_PNPM_IGNORED_BUILDS` for `dtrace-provider` and `protobufjs`, add `--allow-build=dtrace-provider --allow-build=protobufjs` immediately after `dlx`. For example: `pnpm dlx --allow-build=dtrace-provider --allow-build=protobufjs eas-cli@latest login`. These flags allow those dependencies' installation scripts in the temporary CLI environment.
+
+2. Create an account at [expo.dev](https://expo.dev/signup), or sign in to your existing account, then create or link the EAS project:
+
+   ```sh
+   pnpm dlx eas-cli@latest login
+   pnpm dlx eas-cli@latest init
+   ```
+
+   Choose the Expo account that should own the app. Review and commit the `app.json` changes, including `extra.eas.projectId`, before building through GitHub. Keep the Android package ID `com.emccormack.dailymoviecalendar` stable and reuse the same signing keystore for subsequent APK updates.
+
+3. Copy the deployed backend's `ApiUrl` output and save it in the EAS project's **production** environment. Replace the example URL below with that public HTTPS endpoint, not localhost or a development computer's LAN address:
+
+   ```sh
+   pnpm dlx eas-cli@latest env:set production --name EXPO_PUBLIC_MOVIE_API_URL --value https://YOUR_API_URL --visibility plaintext
+   ```
+
+   You can also set it through the Expo dashboard. The `preview` profile inherits `environment: "production"` from `base` in `eas.json`, so use the production environment even though the profile is named preview. The API URL is embedded in the app; rebuild after changing it. Keep `TMDB_READ_TOKEN` on the backend. See [backend.md](backend.md) if the backend still needs deployment.
+
+4. Start the first build interactively so EAS can set up Android signing:
+
+   ```sh
+   pnpm dlx eas-cli@latest build --platform android --profile preview
+   ```
+
+   For a new app without an existing keystore, choose **Generate new keystore** and let EAS manage it. Follow the build link and wait for the EAS status to become **Finished**. This command uploads the project and queues a cloud build against your EAS plan allowance; it does not require a local Android SDK.
+
+   To configure signing now and trigger the build through GitHub instead, run `pnpm dlx eas-cli@latest credentials:configure-build --platform android --profile preview`, choose **Generate new keystore**, then follow the GitHub build automation steps below.
+
+5. Open the finished build's install link on your Android phone, download the APK, and allow installation from your browser when Android prompts. Launch it and check movie search, posters, and calendar persistence after closing and reopening the app. For later APKs, rerun the same build command and install the new APK over the existing app to preserve local calendars and progress.
+
+Expo references: [first build and signing](https://docs.expo.dev/build/setup/), [installable APKs](https://docs.expo.dev/build/internal-distribution/), and [EAS CLI environment commands](https://docs.expo.dev/eas/cli/#eas-envset-environment).
+
+### Optional GitHub build automation
+
+Once Android signing credentials are configured, create an [Expo personal access token](https://docs.expo.dev/accounts/programmatic-access/#personal-access-tokens) through your personal account settings. In GitHub, go to **Settings → Environments → production** and add it as the environment secret `EXPO_TOKEN`, or run `gh secret set EXPO_TOKEN --env production` and paste the token into the prompt. The environment should allow `master` plus `v*` tags. Commit and push the EAS project configuration, then run **Actions → Build Android with EAS → Run workflow** from `master`, or use the GitHub CLI:
+
+```sh
+gh workflow run android-build.yml --ref master
+```
+
+This queues an APK build. The workflow uses `--no-wait`; check Expo for the completed APK even if GitHub is green. No Android keystore or passwords need to be stored in GitHub. The `pnpm` and Node versions in `eas.json` match this repository's toolchain rather than the EAS image defaults.
 
 EAS Update (OTA) is not configured. This app does not currently depend on `expo-updates`, and `app.json` has no update URL or runtime version. APKs built now will need a new APK installation if OTA is added later. If OTA becomes useful, install `expo-updates`, run `eas update:configure` after linking the Expo project, add an update channel to the APK build profile, and build a new APK before publishing any OTA update.

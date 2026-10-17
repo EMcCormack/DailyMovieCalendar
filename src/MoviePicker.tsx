@@ -51,10 +51,12 @@ export function MoviePicker({
     enabled: searchReady,
     retry: 1,
   });
+  // Reposition for each query, page, and result refresh, including cached results.
+  const searchScrollKey = searchReady ? `${debouncedQuery}:${page}:${search.dataUpdatedAt}` : null;
   useEffect(() => {
-    if (searchReady)
+    if (searchScrollKey !== null)
       scroll.current?.scrollToOffset({ offset: headerHeight.current, animated: false });
-  }, [searchReady, debouncedQuery, page, search.dataUpdatedAt]);
+  }, [searchScrollKey]);
   const results = searchReady ? (search.data?.movies ?? []) : [];
   const totalPages = searchReady ? (search.data?.totalPages ?? 0) : 0;
   const busy = searchReady && search.isFetching;

@@ -23,6 +23,12 @@
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "39a79b6b-e7ab-4295-9884-4c588801eda2"
+      }
+    },
+    "owner": "emccormack"
   }
 }

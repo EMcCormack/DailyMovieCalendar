@@ -6,7 +6,7 @@ Lambda has **no customer VPC configuration**. No NAT gateway, RDS instance, load
 
 ## Local development
 
-Requires Node 24+, pnpm 11.5.0.
+Requires Node 24 and pnpm 12.3.4, managed by `mise.toml`. Run `mise install` first.
 
 1. `pnpm install`
 2. Copy `.env.example` to `.env`.

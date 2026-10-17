@@ -283,134 +283,128 @@ function MovieApp() {
               <Text>{error} ×</Text>
             </Pressable>
           )}
-          <>
-            {calendar.movies.length === 0 && (
-              <LinearGradient
-                colors={season === "halloween" ? ["#ece8dc", "#e4e9db"] : ["#e5ebdf", "#f0ebe0"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={{
-                  borderRadius: 24,
-                  padding: wide ? 40 : 26,
-                  overflow: "hidden",
-                }}
-              >
-                <View style={{ maxWidth: wide ? "65%" : "100%" }}>
-                  <Text className="text-moss text-xs tracking-widest font-bold mb-4">
-                    {info.label.toUpperCase()} {calendar.year} · ONE MOVIE A DAY
-                  </Text>
-                  <Text
-                    className="text-ink"
-                    style={{
-                      fontFamily: serif,
-                      fontSize: wide ? 52 : 38,
-                      lineHeight: wide ? 59 : 45,
-                    }}
-                  >
-                    {season === "halloween"
-                      ? "Good nights.\nA little goosebumps."
-                      : "Cozy nights.\nChristmas lights."}
-                  </Text>
-                  <Text className="text-muted mt-4 text-base leading-6">
-                    {`${info.subtitle}\nOpen a day. Find a film. Make it a tradition.`}
-                  </Text>
-                  <View className="flex-row mt-6">
-                    <Button title="Choose calendar ↗" onPress={openCalendarPicker} />
-                  </View>
-                </View>
-                {wide && (
-                  <View
-                    pointerEvents="none"
-                    style={{
-                      position: "absolute",
-                      right: 55,
-                      top: 30,
-                      transform: [{ rotate: "8deg" }],
-                    }}
-                  >
-                    <Text style={{ fontSize: 145 }}>{info.emoji}</Text>
-                    <View className="bg-paper rounded-xl p-4 border border-white">
-                      <Text className="text-center text-moss tracking-widest text-xs">
-                        THE NIGHTLY MOVIE CLUB
-                      </Text>
-                      <Text
-                        className="text-center text-ink mt-1"
-                        style={{ fontFamily: serif, fontSize: 24 }}
-                      >
-                        A season of movie magic
-                      </Text>
-                    </View>
-                  </View>
-                )}
-              </LinearGradient>
-            )}
-            <View
-              className={`flex-row items-center justify-between ${calendar.movies.length ? "mt-0" : "mt-9"} mb-2 gap-3`}
+          {calendar.movies.length === 0 && (
+            <LinearGradient
+              colors={season === "halloween" ? ["#ece8dc", "#e4e9db"] : ["#e5ebdf", "#f0ebe0"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{
+                borderRadius: 24,
+                padding: wide ? 40 : 26,
+                overflow: "hidden",
+              }}
             >
-              <View className="flex-1">
-                <Heading>
-                  {calendar.movies.length
-                    ? calendar.name || `Your ${info.label} calendar`
-                    : `Your ${info.label.toLowerCase()} countdown`}
-                </Heading>
+              <View style={{ maxWidth: wide ? "65%" : "100%" }}>
+                <Text className="text-moss text-xs tracking-widest font-bold mb-4">
+                  {info.label.toUpperCase()} {calendar.year} · ONE MOVIE A DAY
+                </Text>
+                <Text
+                  className="text-ink"
+                  style={{
+                    fontFamily: serif,
+                    fontSize: wide ? 52 : 38,
+                    lineHeight: wide ? 59 : 45,
+                  }}
+                >
+                  {season === "halloween"
+                    ? "Good nights.\nA little goosebumps."
+                    : "Cozy nights.\nChristmas lights."}
+                </Text>
+                <Text className="text-muted mt-4 text-base leading-6">
+                  {`${info.subtitle}\nOpen a day. Find a film. Make it a tradition.`}
+                </Text>
+                <View className="flex-row mt-6">
+                  <Button title="Choose calendar ↗" onPress={openCalendarPicker} />
+                </View>
               </View>
-              {calendar.movies.length > 0 && (
-                <Button
-                  secondary
-                  title="Edit calendar"
-                  onPress={() => openCustomCalendar("edit")}
-                />
-              )}
-            </View>
-            <View className="mb-5">
-              <Text className="text-muted text-sm">
-                {calendar.movies.length
-                  ? `${info.label} ${calendar.year} · ${season === "halloween" ? "Oct" : "Dec"} ${startDay}–${startDay + calendar.movies.length - 1}`
-                  : "Choose a calendar or add your own movies to start."}
-              </Text>
-              {calendar.movies.length > 0 && (
-                <View className="flex-row items-center justify-between mt-1">
-                  <Text className="text-muted text-xs">
-                    {watched.length}/{calendar.movies.length} watched
-                  </Text>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Choose a different calendar"
-                    onPress={openCalendarPicker}
-                    className="py-2 pl-3"
-                  >
-                    <Text className="text-moss text-sm underline">Change collection</Text>
-                  </Pressable>
+              {wide && (
+                <View
+                  pointerEvents="none"
+                  style={{
+                    position: "absolute",
+                    right: 55,
+                    top: 30,
+                    transform: [{ rotate: "8deg" }],
+                  }}
+                >
+                  <Text style={{ fontSize: 145 }}>{info.emoji}</Text>
+                  <View className="bg-paper rounded-xl p-4 border border-white">
+                    <Text className="text-center text-moss tracking-widest text-xs">
+                      THE NIGHTLY MOVIE CLUB
+                    </Text>
+                    <Text
+                      className="text-center text-ink mt-1"
+                      style={{ fontFamily: serif, fontSize: 24 }}
+                    >
+                      A season of movie magic
+                    </Text>
+                  </View>
                 </View>
               )}
+            </LinearGradient>
+          )}
+          <View
+            className={`flex-row items-center justify-between ${calendar.movies.length ? "mt-0" : "mt-9"} mb-2 gap-3`}
+          >
+            <View className="flex-1">
+              <Heading>
+                {calendar.movies.length
+                  ? calendar.name || `Your ${info.label} calendar`
+                  : `Your ${info.label.toLowerCase()} countdown`}
+              </Heading>
             </View>
-            {preview && (
-              <Text className="text-moss bg-white p-3 rounded-lg mb-4 text-sm">
-                Preview mode · All days are open. Your real progress stays saved.
-              </Text>
+            {calendar.movies.length > 0 && (
+              <Button secondary title="Edit calendar" onPress={() => openCustomCalendar("edit")} />
             )}
-            <View className="flex-row flex-wrap" style={{ gap: 10 }}>
-              {calendar.movies.map((m, i) => {
-                const day = i + startDay,
-                  locked = i >= unlocked,
-                  seen = revealed.includes(day),
-                  done = watched.includes(day);
-                return (
-                  <CalendarTile
-                    key={`${season}:${calendar.year}:${day}:${m.id}`}
-                    movie={m}
-                    day={day}
-                    locked={locked}
-                    revealed={seen}
-                    watched={done}
-                    wide={wide}
-                    fontFamily={serif}
-                    onPress={() => openDay(day)}
-                  />
-                );
-              })}
-            </View>
-          </>
+          </View>
+          <View className="mb-5">
+            <Text className="text-muted text-sm">
+              {calendar.movies.length
+                ? `${info.label} ${calendar.year} · ${season === "halloween" ? "Oct" : "Dec"} ${startDay}–${startDay + calendar.movies.length - 1}`
+                : "Choose a calendar or add your own movies to start."}
+            </Text>
+            {calendar.movies.length > 0 && (
+              <View className="flex-row items-center justify-between mt-1">
+                <Text className="text-muted text-xs">
+                  {watched.length}/{calendar.movies.length} watched
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Choose a different calendar"
+                  onPress={openCalendarPicker}
+                  className="py-2 pl-3"
+                >
+                  <Text className="text-moss text-sm underline">Change collection</Text>
+                </Pressable>
+              </View>
+            )}
+          </View>
+          {preview && (
+            <Text className="text-moss bg-white p-3 rounded-lg mb-4 text-sm">
+              Preview mode · All days are open. Your real progress stays saved.
+            </Text>
+          )}
+          <View className="flex-row flex-wrap" style={{ gap: 10 }}>
+            {calendar.movies.map((m, i) => {
+              const day = i + startDay,
+                locked = i >= unlocked,
+                seen = revealed.includes(day),
+                done = watched.includes(day);
+              return (
+                <CalendarTile
+                  key={`${season}:${calendar.year}:${day}:${m.id}`}
+                  movie={m}
+                  day={day}
+                  locked={locked}
+                  revealed={seen}
+                  watched={done}
+                  wide={wide}
+                  fontFamily={serif}
+                  onPress={() => openDay(day)}
+                />
+              );
+            })}
+          </View>
         </View>
       </ScrollView>
       <Modal

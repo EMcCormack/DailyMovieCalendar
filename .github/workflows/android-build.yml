@@ -49,7 +49,9 @@ jobs:
         run: |
           if [ -n "$RELEASE_TAG" ]; then
             [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Use vMAJOR.MINOR.PATCH"; exit 1; }
-            gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" > "$RUNNER_TEMP/release.json"
+            # Draft releases are not returned by REST's tag lookup.
+            RELEASE_ID="$(gh release view "$RELEASE_TAG" --json databaseId --jq .databaseId)"
+            gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" > "$RUNNER_TEMP/release.json"
           fi
           node --input-type=module -e '
             import assert from "node:assert/strict";

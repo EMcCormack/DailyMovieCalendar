@@ -49,6 +49,8 @@ The guided deployment writes `samconfig.toml`, which is intentionally ignored by
 
 GitHub Actions tests the tagged or selected commit and queues an [EAS Build](https://docs.expo.dev/build/building-on-ci/). Android compilation, signing, and artifacts live on Expo's build service. This is GitHub Actions orchestration, not EAS Workflows. The GitHub job uses `--no-wait`, so a green GitHub run means EAS accepted the request; check the EAS build dashboard for the final build result.
 
+The workflow reads the exact EAS CLI version from `cli.version` in `eas.json` and runs it through `pnpm dlx`. The CLI stays outside the app's dependencies. This avoids the Expo setup action's internal `npm info` lookup, which fails this project's pnpm-only `devEngines` check. When upgrading the pinned CLI, update the local command examples below as well.
+
 The `preview` profile in `eas.json` produces an installable APK. A manual **Build Android with EAS** run from `master` or a published, non-prerelease `v*` GitHub Release queues one APK and consumes one Android build from your EAS plan allowance. No Play Store AAB or submission runs yet. When Play publishing is needed, add a production profile with `android.buildType: "app-bundle"` and use EAS Submit.
 
 ### One-time setup for an installable Android APK
@@ -62,13 +64,13 @@ The existing `preview` profile is ready for a standalone APK that runs without a
    pnpm install --frozen-lockfile
    ```
 
-   If a `pnpm dlx` command below stops with `ERR_PNPM_IGNORED_BUILDS` for `dtrace-provider` and `protobufjs`, add `--allow-build=dtrace-provider --allow-build=protobufjs` immediately after `dlx`. For example: `pnpm dlx --allow-build=dtrace-provider --allow-build=protobufjs eas-cli@latest login`. These flags allow those dependencies' installation scripts in the temporary CLI environment.
+   If a `pnpm dlx` command below stops with `ERR_PNPM_IGNORED_BUILDS` for `dtrace-provider` and `protobufjs`, add `--allow-build=dtrace-provider --allow-build=protobufjs` immediately after `dlx`. For example: `pnpm dlx --allow-build=dtrace-provider --allow-build=protobufjs eas-cli@25.0.0 login`. These flags allow those dependencies' installation scripts in the temporary CLI environment.
 
 2. Create an account at [expo.dev](https://expo.dev/signup), or sign in to your existing account, then create or link the EAS project:
 
    ```sh
-   pnpm dlx eas-cli@latest login
-   pnpm dlx eas-cli@latest init
+   pnpm dlx eas-cli@25.0.0 login
+   pnpm dlx eas-cli@25.0.0 init
    ```
 
    Choose the Expo account that should own the app. Review and commit the `app.json` changes, including `extra.eas.projectId`, before building through GitHub. Keep the Android package ID `com.emccormack.dailymoviecalendar` stable and reuse the same signing keystore for subsequent APK updates.
@@ -76,7 +78,7 @@ The existing `preview` profile is ready for a standalone APK that runs without a
 3. Copy the deployed backend's `ApiUrl` output and save it in the EAS project's **production** environment. Replace the example URL below with that public HTTPS endpoint, not localhost or a development computer's LAN address:
 
    ```sh
-   pnpm dlx eas-cli@latest env:set production --name EXPO_PUBLIC_MOVIE_API_URL --value https://YOUR_API_URL --visibility plaintext
+   pnpm dlx eas-cli@25.0.0 env:set production --name EXPO_PUBLIC_MOVIE_API_URL --value https://YOUR_API_URL --visibility plaintext
    ```
 
    You can also set it through the Expo dashboard. The `preview` profile inherits `environment: "production"` from `base` in `eas.json`, so use the production environment even though the profile is named preview. The API URL is embedded in the app; rebuild after changing it. Keep `TMDB_READ_TOKEN` on the backend. See [backend.md](backend.md) if the backend still needs deployment.
@@ -84,12 +86,12 @@ The existing `preview` profile is ready for a standalone APK that runs without a
 4. Start the first build interactively so EAS can set up Android signing:
 
    ```sh
-   pnpm dlx eas-cli@latest build --platform android --profile preview
+   pnpm dlx eas-cli@25.0.0 build --platform android --profile preview
    ```
 
    For a new app without an existing keystore, choose **Generate new keystore** and let EAS manage it. Follow the build link and wait for the EAS status to become **Finished**. This command uploads the project and queues a cloud build against your EAS plan allowance; it does not require a local Android SDK.
 
-   To configure signing now and trigger the build through GitHub instead, run `pnpm dlx eas-cli@latest credentials:configure-build --platform android --profile preview`, choose **Generate new keystore**, then follow the GitHub build automation steps below.
+   To configure signing now and trigger the build through GitHub instead, run `pnpm dlx eas-cli@25.0.0 credentials:configure-build --platform android --profile preview`, choose **Generate new keystore**, then follow the GitHub build automation steps below.
 
 5. Open the finished build's install link on your Android phone, download the APK, and allow installation from your browser when Android prompts. Launch it and check movie search, posters, and calendar persistence after closing and reopening the app. For later APKs, rerun the same build command and install the new APK over the existing app to preserve local calendars and progress.
 

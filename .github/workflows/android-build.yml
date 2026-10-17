@@ -34,9 +34,13 @@ jobs:
       - name: Verify EAS project is linked
         run: |
           node -e 'const id = require("./app.json").expo?.extra?.eas?.projectId; if (!id) throw new Error("Run eas init locally and commit app.json before CI builds.")'
-      - uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
       - name: Queue EAS Android APK build
-        run: eas build --platform android --profile preview --non-interactive --no-wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          EAS_CLI_VERSION="$(node -p 'require("./eas.json").cli.version')"
+          pnpm dlx \
+            --allow-build=dtrace-provider \
+            --allow-build=protobufjs \
+            "eas-cli@$EAS_CLI_VERSION" \
+            build --platform android --profile preview --non-interactive --no-wait

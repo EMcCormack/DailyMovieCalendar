@@ -1,5 +1,6 @@
 {
   "cli": {
+    "version": "25.0.0",
     "appVersionSource": "local"
   },
   "build": {

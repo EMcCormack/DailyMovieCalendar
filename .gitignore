@@ -13,6 +13,11 @@ expo-env.d.ts
 .kotlin/
 *.orig.*
 *.jks
+*.keystore
+*.apk
+*.aab
+/credentials.json
+/release-assets/
 *.p8
 *.p12
 *.key
@@ -31,7 +36,8 @@ yarn-error.*
 *.pem
 
 # local env files
-.env*.local
+.env*
+!.env.example
 
 # typescript
 *.tsbuildinfo
@@ -39,7 +45,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
-.env
+.aws/
 .pnpm-store/
 /build/
 /.aws-sam/

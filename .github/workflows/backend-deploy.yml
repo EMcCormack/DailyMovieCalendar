@@ -19,6 +19,7 @@ jobs:
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master') ||
       (github.event_name == 'release' && !github.event.release.prerelease && startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     environment: production
     env:
       AWS_REGION: ${{ vars.AWS_REGION }}
@@ -29,8 +30,10 @@ jobs:
       ALLOWED_ORIGIN: ${{ vars.ALLOWED_ORIGIN }}
       TMDB_TOKEN_PARAMETER: ${{ vars.TMDB_TOKEN_PARAMETER }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/setup@v1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: pnpm/setup@5d160c5bc68a09337ad0d5654e237e03253b5879 # v1
         with:
           version: 12.3.4
           runtime: node@24
@@ -40,11 +43,11 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm backend:build
-      - uses: aws-actions/configure-aws-credentials@v6
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6
         with:
           role-to-assume: ${{ env.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-      - uses: aws-actions/setup-sam@v3
+      - uses: aws-actions/setup-sam@89ddb14d60e682855e3fea4be85b3c56485de310 # v3
       - name: Validate and deploy CloudFormation stack
         run: |
           : "${AWS_REGION:?Set the production AWS_REGION variable}"

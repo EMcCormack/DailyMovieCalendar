@@ -2,6 +2,11 @@ name: Build Android with EAS
 
 on:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Optional existing vMAJOR.MINOR.PATCH tag with a draft GitHub Release"
+        type: string
+        default: ""
   release:
     types: [published]
 
@@ -9,37 +14,135 @@ permissions:
   contents: read
 
 concurrency:
-  group: android-${{ github.ref }}
+  group: android-${{ inputs.release_tag || github.event.release.tag_name || github.ref }}
   cancel-in-progress: false
 
 jobs:
-  build:
+  prepare:
     if: >-
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master') ||
       (github.event_name == 'release' && !github.event.release.prerelease && startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      commit: ${{ steps.target.outputs.commit }}
+      release_tag: ${{ steps.target.outputs.release_tag }}
+      skip: ${{ steps.target.outputs.skip }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ inputs.release_tag || github.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Require a commit from master
+        run: git merge-base --is-ancestor HEAD origin/master
+      - uses: pnpm/setup@5d160c5bc68a09337ad0d5654e237e03253b5879 # v1
+        with:
+          version: 12.3.4
+          runtime: node@24
+          install: false
+      - name: Validate release target before spending an EAS build
+        id: target
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag || github.event.release.tag_name }}
+        run: |
+          if [ -n "$RELEASE_TAG" ]; then
+            [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Use vMAJOR.MINOR.PATCH"; exit 1; }
+            gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" > "$RUNNER_TEMP/release.json"
+          fi
+          node --input-type=module -e '
+            import assert from "node:assert/strict";
+            import { readFileSync, appendFileSync } from "node:fs";
+            import { execFileSync } from "node:child_process";
+            import { validateRelease } from "./scripts/androidRelease.ts";
+            const tag = process.env.RELEASE_TAG || "";
+            const app = JSON.parse(readFileSync("app.json", "utf8")).expo;
+            const version = app.version;
+            assert.equal(JSON.parse(readFileSync("package.json", "utf8")).version, version, "App and package versions must match");
+            assert.ok(Number.isSafeInteger(app.android.versionCode) && app.android.versionCode > 0, "Android versionCode must be a positive integer");
+            const result = tag ? validateRelease(JSON.parse(readFileSync(`${process.env.RUNNER_TEMP}/release.json`, "utf8")), tag, version, process.env.GITHUB_EVENT_NAME) : { skip: false };
+            const commit = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+            appendFileSync(process.env.GITHUB_OUTPUT, `commit=${commit}\nrelease_tag=${tag}\nskip=${result.skip}\n`);
+            if (result.skip) appendFileSync(process.env.GITHUB_STEP_SUMMARY, "APK assets were already attached to this release. No duplicate EAS build was started.\n");
+          '
+
+  build:
+    needs: prepare
+    if: needs.prepare.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
     environment: production
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/setup@v1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ needs.prepare.outputs.commit }}
+          persist-credentials: false
+      - uses: pnpm/setup@5d160c5bc68a09337ad0d5654e237e03253b5879 # v1
         with:
           version: 12.3.4
           runtime: node@24
           cache: true
           install: false
       - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm format:check
       - run: pnpm typecheck
       - run: pnpm test
       - name: Verify EAS project is linked
         run: |
           node -e 'const id = require("./app.json").expo?.extra?.eas?.projectId; if (!id) throw new Error("Run eas init locally and commit app.json before CI builds.")'
-      - name: Queue EAS Android APK build
+      - name: Build signed Android APK and wait for Expo
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           EAS_CLI_VERSION="$(node -p 'require("./eas.json").cli.version')"
-          pnpm dlx \
+          pnpm --reporter=silent dlx \
             --allow-build=dtrace-provider \
             --allow-build=protobufjs \
             "eas-cli@$EAS_CLI_VERSION" \
-            build --platform android --profile preview --non-interactive --no-wait
+            build --platform android --profile preview --non-interactive --wait --json > "$RUNNER_TEMP/eas-build.json"
+      - name: Download the APK and generate checksums
+        env:
+          EXPECTED_COMMIT: ${{ needs.prepare.outputs.commit }}
+        run: |
+          node --input-type=module -e '
+            import { readFileSync, appendFileSync } from "node:fs";
+            import { collectAndroidBuild } from "./scripts/androidRelease.ts";
+            const app = JSON.parse(readFileSync("app.json", "utf8")).expo;
+            const artifact = await collectAndroidBuild(`${process.env.RUNNER_TEMP}/eas-build.json`, {
+              commit: process.env.EXPECTED_COMMIT, projectId: app.extra.eas.projectId,
+              version: app.version, versionCode: app.android.versionCode,
+            }, "release-assets");
+            appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### Android APK ready\n\nDownload **android-apk** from this run’s Artifacts section.\n\n- APK: ${artifact.name}\n- Commit: ${process.env.EXPECTED_COMMIT}\n- EAS build: ${artifact.buildId}\n- SHA-256: ${artifact.sha256}\n`);
+          '
+      - name: Keep APK and verification files for seven days
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: android-apk
+          path: release-assets/
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+
+  attach-release:
+    needs: [prepare, build]
+    if: needs.prepare.outputs.release_tag != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: android-apk
+          path: release-assets
+      - name: Attach APK to the requested release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.release_tag }}
+        run: |
+          cd release-assets
+          sha256sum --check SHA256SUMS.txt
+          gh release upload "$RELEASE_TAG" ./*.apk SHA256SUMS.txt build-info.json --repo "$GITHUB_REPOSITORY"
+          echo "APK attached to release $RELEASE_TAG. Draft releases stay unpublished until you publish them." >> "$GITHUB_STEP_SUMMARY"

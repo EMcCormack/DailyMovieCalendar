@@ -49,7 +49,7 @@ The guided deployment writes `samconfig.toml`, which is intentionally ignored by
 
 ## Android with EAS Build
 
-GitHub Actions tests the tagged or selected commit and queues an [EAS Build](https://docs.expo.dev/build/building-on-ci/). Android compilation, signing, and artifacts live on Expo's build service. This is GitHub Actions orchestration, not EAS Workflows. The GitHub job uses `--no-wait`, so a green GitHub run means EAS accepted the request; check the EAS build dashboard for the final build result.
+GitHub Actions tests the tagged or selected commit and starts an [EAS Build](https://docs.expo.dev/build/building-on-ci/). Expo compiles and signs the app. GitHub waits for the finished build, downloads its APK, verifies the source commit/project/version, and uploads an `android-apk` artifact with SHA-256 checksums and build metadata. The build job has a 60-minute timeout; artifacts are retained for seven days. A green workflow means the APK was built and collected successfully.
 
 The workflow reads the exact EAS CLI version from `cli.version` in `eas.json` and runs it through `pnpm dlx`. The CLI stays outside the app's dependencies. This avoids the Expo setup action's internal `npm info` lookup, which fails this project's pnpm-only `devEngines` check. When upgrading the pinned CLI, update the local command examples below as well.
 
@@ -107,6 +107,8 @@ Once Android signing credentials are configured, create an [Expo personal access
 gh workflow run android-build.yml --ref master
 ```
 
-This queues an APK build. The workflow uses `--no-wait`; check Expo for the completed APK even if GitHub is green. No Android keystore or passwords need to be stored in GitHub. The `pnpm` and Node versions in `eas.json` match this repository's toolchain rather than the EAS image defaults.
+Download `android-apk` from the finished run's **Artifacts** section and extract the ZIP to install the APK. The job summary records the Expo build ID and source commit. No Android keystore or passwords need to be stored in GitHub. The `pnpm` and Node versions in `eas.json` match this repository's toolchain rather than the EAS image defaults.
+
+For versioned releases, create a tested `vMAJOR.MINOR.PATCH` tag and a draft GitHub Release, then pass `-f release_tag=v1.0.0` to the manual workflow command. The workflow attaches the APK and verification files to that draft with write permission limited to the asset-upload job. Publishing remains a separate action. Follow the full [public repository and release guide](public-release.md), including version increments, immutable release support, and the backend deployment triggered by publication.
 
 EAS Update (OTA) is not configured. This app does not currently depend on `expo-updates`, and `app.json` has no update URL or runtime version. APKs built now will need a new APK installation if OTA is added later. If OTA becomes useful, install `expo-updates`, run `eas update:configure` after linking the Expo project, add an update channel to the APK build profile, and build a new APK before publishing any OTA update.

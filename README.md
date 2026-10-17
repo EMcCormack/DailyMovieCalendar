@@ -2,6 +2,12 @@
 
 A seasonal movie advent calendar for Android, iOS, and web, built with Expo 57, React Native, TypeScript, and NativeWind. Uses pnpm exclusively.
 
+## Install on Android
+
+Signed APKs are attached to [GitHub Releases](https://github.com/EMcCormack/DailyMovieCalendar/releases) when a version is published. Download the `.apk` on your phone and allow installation from your browser when prompted. For updates, install the new APK over the existing app to keep local calendars and watch progress. Manual maintainer builds are available as seven-day `android-apk` artifacts in GitHub Actions.
+
+Release builds use the configured public movie API. Calendars and watch progress remain on the device; search and movie information use the backend and TMDB. Forks and local development should use their own backend configuration.
+
 ## Run
 
 Requires Node.js 24 and pnpm 12.3.4, managed by `mise.toml`.
@@ -52,6 +58,8 @@ Deploy the TypeScript Lambda backend using `template.yaml` (an AWS SAM/CloudForm
 ## Validation
 
 ```sh
+pnpm lint
+pnpm format:check
 pnpm typecheck
 pnpm test
 pnpm exec expo install --check
@@ -66,3 +74,5 @@ References: [Expo SDK 57](https://docs.expo.dev/versions/v57.0.0/), [NativeWind 
 TypeScript 7 is intentionally excluded from Expo's dependency-version check (which recommends TypeScript 6). It is checked separately with `pnpm typecheck`.
 
 For backend deployment and GitHub-orchestrated EAS Android builds, see [GitHub Actions releases](docs/github-actions.md). For API routes and publishing curated collections, see [Backend setup](docs/backend.md). This project is noncommercial and uses TMDB’s developer API.
+
+See [Contributing](CONTRIBUTING.md), [Security](SECURITY.md), and the [public repository and release guide](docs/public-release.md). Code is MIT licensed; third-party movie data, artwork, and trademarks retain their owners' terms.

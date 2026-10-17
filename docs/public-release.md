@@ -10,6 +10,8 @@ Third-party actions are pinned to commit SHAs. Dependabot checks those action pi
 
 Local audit on October 17, 2026: Gitleaks scanned all 13 existing commits and found no leaks. Git history contained `.env.example` but no tracked `.env`, keystore, AWS credential file, or Expo `credentials.json`. This is a point-in-time scan, not a guarantee about every possible secret format or future commit.
 
+The staged release-preparation changes, five completed historical build/deployment/CI logs, issue/PR descriptions, and discussion/review comments were also scanned with no leaks found. The production environment's restrictions were verified as `master` branches and `v*` tags, and the repository's default workflow token permissions were already read-only with pull-request approval disabled. Human review of author metadata and attachments remains part of the visibility decision.
+
 ## Before changing visibility
 
 1. Confirm the `CI` workflow succeeds on the commit you intend to publish.

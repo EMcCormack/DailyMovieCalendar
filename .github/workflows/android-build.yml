@@ -36,7 +36,7 @@ jobs:
           persist-credentials: false
       - name: Require a commit from master
         run: git merge-base --is-ancestor HEAD origin/master
-      - uses: pnpm/setup@5d160c5bc68a09337ad0d5654e237e03253b5879 # v1
+      - uses: pnpm/setup@a0881977cd8ea73b1ed212236c99ca10dcc80cf4 # v3.1.1
         with:
           version: 12.3.4
           runtime: node@24
@@ -78,7 +78,7 @@ jobs:
         with:
           ref: ${{ needs.prepare.outputs.commit }}
           persist-credentials: false
-      - uses: pnpm/setup@5d160c5bc68a09337ad0d5654e237e03253b5879 # v1
+      - uses: pnpm/setup@a0881977cd8ea73b1ed212236c99ca10dcc80cf4 # v3.1.1
         with:
           version: 12.3.4
           runtime: node@24
